@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Préparation de Commande - Adopt Rennes</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #FFE5F1 0%, #FFFFFF 100%);
+        }
+        .header {
+            background: linear-gradient(135deg, #FF1493 0%, #FF69B4 100%);
+            color: white;
+            padding: 30px 20px;
+            border-radius: 10px 10px 0 0;
+            text-align: center;
+            position: relative;
+        }
+        .header h1 {
+            margin: 0 0 10px 0;
+            font-size: 2.2em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        .drapeau {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 0;
+            border: 2px solid white;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .drapeau-bleu, .drapeau-blanc, .drapeau-rouge {
+            width: 20px;
+            height: 40px;
+        }
+        .drapeau-bleu { background: #0055A4; }
+        .drapeau-blanc { background: white; }
+        .drapeau-rouge { background: #EF4135; }
+        .section {
+            background: white;
+            padding: 20px;
+            margin-bottom: 2px;
+            border-left: 5px solid #FF1493;
+        }
+        .section-gray {
+            background: #FFF0F8;
+        }
+        .section h2 {
+            margin-top: 0;
+            color: #FF1493;
+            border-bottom: 2px solid #FF1493;
+            padding-bottom: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        th {
+            background: #FF1493;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+        }
+        td {
+            padding: 10px;
+            border: 1px solid #FFB6D9;
+        }
+        tr:nth-child(even) {
+            background: #FFF5FA;
+        }
+        input[type="text"], input[type="number"], textarea {
+            width: 95%;
+            padding: 8px;
+            border: 2px solid #FFB6D9;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #FF1493;
+        }
+        .readonly {
+            background: #FFF0F8;
+        }
+        .alert {
+            background: #FFF3E0;
+            border: 2px solid #FF6B9D;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            color: #C2185B;
+            font-weight: bold;
+        }
+        .rupture {
+            background: #FFCDD2 !important;
+            font-weight: bold;
+            color: #C62828;
+        }
+        .ok {
+            background: #C8E6C9 !important;
+            color: #2E7D32;
+        }
+        .mail-section {
+            background: #E1F5FE;
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid #FF1493;
+            margin-top: 20px;
+        }
+        textarea {
+            min-height: 120px;
+        }
+        .instructions {
+            background: #FFF9C4;
+            border-left: 4px solid #FFC107;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+        .info-box {
+            display: inline-block;
+            background: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            margin: 5px;
+            border: 2px solid #FF69B4;
+        }
+        .badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.9em;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .badge-warning {
+            background: #FFC107;
+            color: #000;
+        }
+        .calcul-auto {
+            color: #FF1493;
+            font-size: 0.85em;
+            font-style: italic;
+        }
+        .btn-container {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+            justify-content: center;
+        }
+        .btn {
+            padding: 15px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+        }
+        .btn-print {
+            background: linear-gradient(135deg, #FF1493 0%, #FF69B4 100%);
+            color: white;
+        }
+        .btn-sms {
+            background: linear-gradient(135deg, #4CAF50 0%, #8BC34A 100%);
+            color: white;
+        }
+        .preparateur-box {
+            background: white;
+            padding: 15px;
+            border: 2px solid #FF1493;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        @media print {
+            .btn-container, .no-print {
+                display: none;
+            }
+            body {
+                background: white;
+            }
+            .section:has(#tableStock) {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="drapeau">
+            <div class="drapeau-bleu"></div>
+            <div class="drapeau-blanc"></div>
+            <div class="drapeau-rouge"></div>
+        </div>
+        <h1>📦 PRÉPARATION DE COMMANDE</h1>
+        <div style="font-size: 1.2em; margin-top: 10px;">ADOPT PARFUMS</div>
+        <div style="margin-top: 15px;">
+            <div class="info-box">
+                <strong>Magasin:</strong> Adopt Rennes - Rue Le Bastard
+            </div>
+            <div class="info-box">
+                <strong>Date:</strong> 13/11/2025
+            </div>
+            <div class="info-box">
+                <strong>👤 Préparé par:</strong> <input type="text" id="preparateur" placeholder="Votre prénom et nom" style="width: 200px; margin-left: 10px; border: 2px solid white;">
+            </div>
+        </div>
+    </div>
+
+    <!-- COMMANDE CLIENT -->
+    <div class="section section-gray">
+        <h2>🛍️ COMMANDE CLIENT À PRÉPARER</h2>
+        <div style="display: flex; gap: 20px; margin-bottom: 15px; flex-wrap: wrap;">
+            <div class="info-box">
+                <strong>N° Commande:</strong> WEB-3847
+            </div>
+            <div class="info-box">
+                <strong>Client:</strong> Mme MARTIN Sophie
+            </div>
+            <div class="info-box">
+                <strong>Retrait:</strong> 14/11/2025
+            </div>
+            <div class="info-box">
+                <strong>Téléphone:</strong> 06 42 78 93 15
+            </div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 15%">Référence</th>
+                    <th style="width: 40%">Produit</th>
+                    <th style="width: 15%">Contenance</th>
+                    <th style="width: 15%">Qté commandée</th>
+                    <th style="width: 15%">Stock dispo</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>ADP-FLO-001</td>
+                    <td>Rose Charmeuse</td>
+                    <td>50ml</td>
+                    <td style="text-align: center; font-weight: bold;">2</td>
+                    <td style="text-align: center;">8</td>
+                </tr>
+                <tr>
+                    <td>ADP-FRU-002</td>
+                    <td>Pink & Pop</td>
+                    <td>100ml</td>
+                    <td style="text-align: center; font-weight: bold;">1</td>
+                    <td style="text-align: center;">12</td>
+                </tr>
+                <tr>
+                    <td>ADP-GOU-001</td>
+                    <td>Little Sugar</td>
+                    <td>100ml</td>
+                    <td style="text-align: center; font-weight: bold;">3</td>
+                    <td style="text-align: center;">2</td>
+                </tr>
+                <tr>
+                    <td>ADP-MUS-001</td>
+                    <td>Musc Blanc Cocon</td>
+                    <td>50ml</td>
+                    <td style="text-align: center; font-weight: bold;">1</td>
+                    <td style="text-align: center;">15</td>
+                </tr>
+                <tr>
+                    <td>ADP-FRU-005</td>
+                    <td>Madame Bonheur</td>
+                    <td>100ml</td>
+                    <td style="text-align: center; font-weight: bold;">2</td>
+                    <td style="text-align: center;">6</td>
+                </tr>
+                <tr>
+                    <td>ADP-GOU-005</td>
+                    <td>Black Cherry</td>
+                    <td>50ml</td>
+                    <td style="text-align: center; font-weight: bold;">1</td>
+                    <td style="text-align: center;">10</td>
+                </tr>
+                <tr>
+                    <td>ADP-FRU-003</td>
+                    <td>Sunset Kiss (Litchi)</td>
+                    <td>30ml</td>
+                    <td style="text-align: center; font-weight: bold;">2</td>
+                    <td style="text-align: center;">15</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="alert">
+            ⚠️ <strong>ATTENTION:</strong> Vérifiez bien le stock disponible avant de préparer chaque article !
+        </div>
+    </div>
+
+    <!-- NOM DU PRÉPARATEUR -->
+    
+
+    <!-- ZONE DE PRÉPARATION -->
+    <div class="section">
+        <h2>✍️ VOTRE PRÉPARATION <span class="badge badge-warning">À COMPLÉTER</span></h2>
+        
+        <div class="instructions">
+            <strong>📋 CONSIGNES:</strong>
+            <ol>
+                <li>Tapez la référence de chaque produit que vous préparez (ex: ADP-FLO-001)</li>
+                <li>Indiquez la quantité commandée</li>
+                <li>Indiquez la quantité que vous avez réellement préparée</li>
+                <li>Le stock se mettra à jour automatiquement</li>
+                <li>Si vous constatez une rupture, vous devrez rédiger un mail au responsable</li>
+            </ol>
+        </div>
+
+        <table id="tablePreparation">
+            <thead>
+                <tr>
+                    <th style="width: 18%">Référence tapée</th>
+                    <th style="width: 32%">Produit <span class="calcul-auto">(auto)</span></th>
+                    <th style="width: 15%">Qté commandée</th>
+                    <th style="width: 15%">Qté préparée</th>
+                    <th style="width: 20%">Statut <span class="calcul-auto">(auto)</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><input type="text" id="ref1" oninput="updateProduct(1)" placeholder="ADP-XXX-XXX"></td>
+                    <td id="prod1" class="readonly">-</td>
+                    <td><input type="number" id="cmd1" min="0" placeholder="0"></td>
+                    <td><input type="number" id="prep1" min="0" oninput="updateStatus(1)" placeholder="0"></td>
+                    <td id="status1" class="readonly">-</td>
+                </tr>
+                <tr>
+                    <td><input type="text" id="ref2" oninput="updateProduct(2)" placeholder="ADP-XXX-XXX"></td>
+                    <td id="prod2" class="readonly">-</td>
+                    <td><input type="number" id="cmd2" min="0" placeholder="0"></td>
+                    <td><input type="number" id="prep2" min="0" oninput="updateStatus(2)" placeholder="0"></td>
+                    <td id="status2" class="readonly">-</td>
+                </tr>
+                <tr>
+                    <td><input type="text" id="ref3" oninput="updateProduct(3)" placeholder="ADP-XXX-XXX"></td>
+                    <td id="prod3" class="readonly">-</td>
+                    <td><input type="number" id="cmd3" min="0" placeholder="0"></td>
+                    <td><input type="number" id="prep3" min="0" oninput="updateStatus(3)" placeholder="0"></td>
+                    <td id="status3" class="readonly">-</td>
+                </tr>
+                <tr>
+                    <td><input type="text" id="ref4" oninput="updateProduct(4)" placeholder="ADP-XXX-XXX"></td>
+                    <td id="prod4" class="readonly">-</td>
+                    <td><input type="number" id="cmd4" min="0" placeholder="0"></td>
+                    <td><input type="number" id="prep4" min="0" oninput="updateStatus(4)" placeholder="0"></td>
+                    <td id="status4" class="readonly">-</td>
+                </tr>
+                <tr>
+                    <td><input type="text" id="ref5" oninput="updateProduct(5)" placeholder="ADP-XXX-XXX"></td>
+                    <td id="prod5" class="readonly">-</td>
+                    <td><input type="number" id="cmd5" min="0" placeholder="0"></td>
+                    <td><input type="number" id="prep5" min="0" oninput="updateStatus(5)" placeholder="0"></td>
+                    <td id="status5" class="readonly">-</td>
+                </tr>
+                <tr>
+                    <td><input type="text" id="ref6" oninput="updateProduct(6)" placeholder="ADP-XXX-XXX"></td>
+                    <td id="prod6" class="readonly">-</td>
+                    <td><input type="number" id="cmd6" min="0" placeholder="0"></td>
+                    <td><input type="number" id="prep6" min="0" oninput="updateStatus(6)" placeholder="0"></td>
+                    <td id="status6" class="readonly">-</td>
+                </tr>
+                <tr>
+                    <td><input type="text" id="ref7" oninput="updateProduct(7)" placeholder="ADP-XXX-XXX"></td>
+                    <td id="prod7" class="readonly">-</td>
+                    <td><input type="number" id="cmd7" min="0" placeholder="0"></td>
+                    <td><input type="number" id="prep7" min="0" oninput="updateStatus(7)" placeholder="0"></td>
+                    <td id="status7" class="readonly">-</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- STOCK MIS À JOUR -->
+    <div class="section">
+        <h2>📊 STOCK APRÈS PRÉPARATION <span class="calcul-auto">(mise à jour automatique)</span></h2>
+        
+        <table id="tableStock">
+            <thead>
+                <tr>
+                    <th style="width: 15%">Référence</th>
+                    <th style="width: 35%">Produit</th>
+                    <th style="width: 15%">Stock initial</th>
+                    <th style="width: 15%">Qté préparée</th>
+                    <th style="width: 20%">Stock restant</th>
+                </tr>
+            </thead>
+            <tbody id="stockTableBody">
+                <tr data-ref="ADP-FLO-001">
+                    <td>ADP-FLO-001</td>
+                    <td>Rose Charmeuse 50ml</td>
+                    <td style="text-align: center;">8</td>
+                    <td style="text-align: center;" class="stock-prep">0</td>
+                    <td style="text-align: center; font-weight: bold;" class="stock-final">8</td>
+                </tr>
+                <tr data-ref="ADP-FLO-002">
+                    <td>ADP-FLO-002</td>
+                    <td>Tendre Iris 100ml</td>
+                    <td style="text-align: center;">5</td>
+                    <td style="text-align: center;" class="stock-prep">0</td>
+                    <td style="text-align: center; font-weight: bold;" class="stock-final">5</td>
+                </tr>
+                <tr data-ref="ADP-FLO-003">
+                    <td>ADP-FLO-003</td>
+                    <td>Magnolia Majestueux 30ml</td>
+                    <td style="text-align: center;">10</td>
+                    <td style="text-align: center;" class="stock-prep">0</td>
+                    <td style="text-align: center; font-weight: bold;" class="stock-final">10</td>
+                </tr>
+                <tr data-ref="ADP-FLO-004">
+                    <td>ADP-FLO-004</td>
+                    <td>Fleur de Coton 50ml</td>
+                    <td style="text-align: center;">7</td>
+                    <td style="text-align: center;" class="stock-prep">0</td>
+                    <td style="text-align: center; font-weight: bold;" class="stock-final">7</td>
+                </tr>
+                <tr data-ref="ADP-FLO-005">
+                    <td>ADP-FLO-005</td>
+                    <td>Violette-Vanille 100ml</td>
+                    <td style="text-align: center;">12</td>
+                    <td style="text-align: center;" class="stock-prep">0</td>
+                    <td style="text-align: center; font-weight: bold;" class="stock-final">12</td>
+                </tr>
+                <tr data-ref="ADP-FRU-001">
+                    <td>ADP-FRU-001</td>
+                    <td>Framboise Irrésistible 50ml</td>
+                    <td style="text-align: center;">9</td>
+                    <td style="text-align: center;" class="stock-prep">0</td>
+                    <td style="text-align: center; font-weight: bold;" class="stock-final">9</td>
+                </tr>
+                <tr data-ref="ADP-FRU-002">
+                    <td>ADP-FRU-002</td>
+                    <td>Pink & Pop 100ml</td>
+                    <td style="text-align: center;">12</td>
+                    <td style="text-align: center;" class="stock-prep">0</td>
+                    <td style="text-align: center; font-weight: bold;" class="stock-final">12</td>
+                </tr>
+                <tr data-ref="ADP-FRU-003">
+                    <td>ADP-FRU-003</td>
+                    <td>Sunset Kiss (Litchi) 30ml</td>
+                    <td style="text-align: center;">15</td>
+                    <td style="text-align: center;" class="stock-prep">0</td>
+                    <td style="text-align: center; font-weight: bold;" class="stock-final">15</td>
+                </tr>
+                <tr data-ref="ADP-FRU-004">
+                    <td>ADP-FRU-004</td>
+                    <td>Fleur de Cerisier 50ml</td>
+                    <td style="text-align: center;">6</td>
+                    <td style="text-align: center;" class="stock-prep">0</td>
+                    <td style="text-align: center; font-weight: bold;" class="stock-final">6</td>
+                </tr>
+                <tr data-ref="ADP-FRU-005">
+                    <td>ADP-FRU-005</td>
+                    <td>Madame Bonheur 100ml</td>
+                    <td style="text-align: center;">6</td>
+                    <td style="text-align: center;" class="stock-prep">0</td>
+                    <td style="text-align: center; font-weight: bold;" class="stock-final">6</td>
+                </tr>
+                <tr data-ref="ADP-FRU-006">
+                    <td>ADP-FRU-006</td>
+                    <td>Summer Crush (Ananas-Pêche) 50ml</td>
+                    <td style="text-align: center;">11</td>
+                    <td style="text-align: center;" class="stock-prep">0</td>
+                    <td style="text-align: center; font-weight: bold;" class="stock-final">11</td>
+                </tr>
+                <tr data-ref="ADP-FRU-007">
+                    <td>ADP-FRU-007</td>
+                    <td>Bahia Samba (Coco-Nectarine) 100ml</td>
+                    <td style="text-align: center;">8</td>
+                    <td style="text-align: center;" class="stock-prep">0</td>
+                    <td style="text-align: center; font-weight: bold;" class="stock-final">8</td>
+                </tr>
+                <tr data-ref="ADP-FRU-008">
+                    <td>ADP-FRU-008</td>
+                    <td>Feuille de Fraisier 30ml</td>
+                    <td style="text-align: center;">13</td>
+                    <td style="text-align: center;" class="stock-prep">0</td>
+                    <td style="text-align: center; font-weight: bold;" class="stock-final">13</td>
+                </tr>
+                <tr data-ref="ADP-GOU-001">
+                    <td>ADP-GOU-001</td>
+                    <td>Little Sugar 100ml</td>
+                    <td style="text-align: center;">2</td>
+                    <td style="text-align: center;" class="stock-prep">0</td>
+                    <td style="text-align: center; font-weight: bold;" class="stock-final">2</td>
+                </tr>
+                <tr data-ref="ADP-GOU-002">
+                    <td>ADP-GOU-002</td>
+                    <td>Yummy Candy 50ml</td>
+                    <td style="text-align: center;">14</td>
+                    <td style="text-align: center;" class="stock-prep">0</td>
+                    <td style="text-align: center; font-weight: bold;" class="stock-final">14</td>
+                </tr>
+                <tr data-ref="ADP-GOU-003">
+                    <td>ADP-GOU-003</td>
+                    <td>Rêve de Coco 100ml</td>
+                    <td style="text-align: center;">9</td>
+                    <td style="text-align: center;" class="stock-prep">0</td>
+                    <td style="text-align: center; font-weight: bold;" class="stock-final">9</td>
+                </tr>
+                <tr data-ref="ADP-GOU-004">
+                    <td>ADP-GOU-004</td>
+                    <td>Vanille Coco 30ml</td>
+                    <td style="text-align: center;">7</td>
+                    <td style="text-align: center;" class="stock-prep">0</td>
+                    <td style="text-align: center; font-weight: bold;" class="stock-final">7</td>
+                </tr>
+                <tr data-ref="ADP-GOU-005">
+                    <td>ADP-GOU-005</td>
+                    <td>Black Cherry 50ml</td>
+                    <td style="text-align: center;">10</td>
+                    <td style="text-align: center;" class="stock-prep">0</td>
+                    <td style="text-align: center; font-weight: bold;" class="stock-final">10</td>
+                </tr>
+                <tr data-ref="ADP-GOU-006">
+                    <td>ADP-GOU-006</td>
+                    <td>Guimauve Tendresse 100ml</td>
+                    <td style="text-align: center;">5</td>
+                    <td style="text-align: center;" class="stock-prep">0</td>
+                    <td style="text-align: center; font-weight: bold;" class="stock-final">5</td>
+                </tr>
+                <tr data-ref="ADP-GOU-007">
+                    <td>ADP-GOU-007</td>
+                    <td>Amande Dragée 50ml</td>
+                    <td style="text-align: center;">11</td>
+                    <td style="text-align: center;" class="stock-prep">0</td>
+                    <td style="text-align: center; font-weight: bold;" class="stock-final">11</td>
+                </tr>
+                <tr data-ref="ADP-GOU-008">
+                    <td>ADP-GOU-008</td>
+                    <td>Barbe à Papa 30ml</td>
+                    <td style="text-align: center;">16</td>
+                    <td style="text-align: center;" class="stock-prep">0</td>
+                    <td style="text-align: center; font-weight: bold;" class="stock-final">16</td>
+                </tr>
+                <tr data-ref="ADP-BOI-001">
+                    <td>ADP-BOI-001</td>
+                    <td>Santal Envoûtant 100ml</td>
+                    <td style="text-align: center;">4</td>
+                    <td style="text-align: center;" class="stock-prep">0</td>
+                    <td style="text-align: center; font-weight: bold;" class="stock-final">4</td>
+                </tr>
+                <tr data-ref="ADP-BOI-002">
+                    <td>ADP-BOI-002</td>
+                    <td>Poire-Santal 50ml</td>
+                    <td style="text-align: center;">8</td>
+                    <td style="text-align: center;" class="stock-prep">0</td>
+                    <td style="text-align: center; font-weight: bold;" class="stock-final">8</td>
+                </tr>
+                <tr data-ref="ADP-BOI-003">
+                    <td>ADP-BOI-003</td>
+                    <td>Now or Never 100ml</td>
+                    <td style="text-align: center;">6</td>
+                    <td style="text-align: center;" class="stock-prep">0</td>
+                    <td style="text-align: center; font-weight: bold;" class="stock-final">6</td>
+                </tr>
+                <tr data-ref="ADP-BOI-004">
+                    <td>ADP-BOI-004</td>
+                    <td>Bois de Cachemire 30ml</td>
+                    <td style="text-align: center;">12</td>
+                    <td style="text-align: center;" class="stock-prep">0</td>
+                    <td style="text-align: center; font-weight: bold;" class="stock-final">12</td>
+                </tr>
+                <tr data-ref="ADP-ORI-001">
+                    <td>ADP-ORI-001</td>
+                    <td>Ambre-Vanille 50ml</td>
+                    <td style="text-align: center;">9</td>
+                    <td style="text-align: center;" class="stock-prep">0</td>
+                    <td style="text-align: center; font-weight: bold;" class="stock-final">9</td>
+                </tr>
+                <tr data-ref="ADP-ORI-002">
+                    <td>ADP-ORI-002</td>
+                    <td>Monoï des Îles 100ml</td>
+                    <td style="text-align: center;">7</td>
+                    <td style="text-align: center;" class="stock-prep">0</td>
+                    <td style="text-align: center; font-weight: bold;" class="stock-final">7</td>
+                </tr>
+                <tr data-ref="ADP-ORI-003">
+                    <td>ADP-ORI-003</td>
+                    <td>Vahiné des Îles 50ml</td>
+                    <td style="text-align: center;">11</td>
+                    <td style="text-align: center;" class="stock-prep">0</td>
+                    <td style="text-align: center; font-weight: bold;" class="stock-final">11</td>
+                </tr>
+                <tr data-ref="ADP-ORI-004">
+                    <td>ADP-ORI-004</td>
+                    <td>Fleur de Tiaré 100ml</td>
+                    <td style="text-align: center;">5</td>
+                    <td style="text-align: center;" class="stock-prep">0</td>
+                    <td style="text-align: center; font-weight: bold;" class="stock-final">5</td>
+                </tr>
+                <tr data-ref="ADP-ORI-005">
+                    <td>ADP-ORI-005</td>
+                    <td>Wonderful 30ml</td>
+                    <td style="text-align: center;">13</td>
+                    <td style="text-align: center;" class="stock-prep">0</td>
+                    <td style="text-align: center; font-weight: bold;" class="stock-final">13</td>
+                </tr>
+                <tr data-ref="ADP-AGR-001">
+                    <td>ADP-AGR-001</td>
+                    <td>Citronnade 50ml</td>
+                    <td style="text-align: center;">10</td>
+                    <td style="text-align: center;" class="stock-prep">0</td>
+                    <td style="text-align: center; font-weight: bold;" class="stock-final">10</td>
+                </tr>
+                <tr data-ref="ADP-AGR-002">
+                    <td>ADP-AGR-002</td>
+                    <td>Bergamote Fraîche 100ml</td>
+                    <td style="text-align: center;">8</td>
+                    <td style="text-align: center;" class="stock-prep">0</td>
+                    <td style="text-align: center; font-weight: bold;" class="stock-final">8</td>
+                </tr>
+                <tr data-ref="ADP-AGR-003">
+                    <td>ADP-AGR-003</td>
+                    <td>Mandarine Pétillante 30ml</td>
+                    <td style="text-align: center;">14</td>
+                    <td style="text-align: center;" class="stock-prep">0</td>
+                    <td style="text-align: center; font-weight: bold;" class="stock-final">14</td>
+                </tr>
+                <tr data-ref="ADP-MUS-001">
+                    <td>ADP-MUS-001</td>
+                    <td>Musc Blanc Cocon 50ml</td>
+                    <td style="text-align: center;">15</td>
+                    <td style="text-align: center;" class="stock-prep">0</td>
+                    <td style="text-align: center; font-weight: bold;" class="stock-final">15</td>
+                </tr>
+                <tr data-ref="ADP-MUS-002">
+                    <td>ADP-MUS-002</td>
+                    <td>Doux Baiser 100ml</td>
+                    <td style="text-align: center;">6</td>
+                    <td style="text-align: center;" class="stock-prep">0</td>
+                    <td style="text-align: center; font-weight: bold;" class="stock-final">6</td>
+                </tr>
+                <tr data-ref="ADP-MUS-003">
+                    <td>ADP-MUS-003</td>
+                    <td>Cocon Blanc 50ml</td>
+                    <td style="text-align: center;">9</td>
+                    <td style="text-align: center;" class="stock-prep">0</td>
+                    <td style="text-align: center; font-weight: bold;" class="stock-final">9</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ZONE MAIL -->
+    <div class="mail-section">
+        <h2 style="margin-top: 0; color: #FF1493;">📧 MAIL AU RESPONSABLE WEB EN CAS DE RUPTURE</h2>
+        
+        <div style="margin: 20px 0;">
+            <label><strong>À :</strong></label><br>
+            <input type="text" value="responsable-web@adopt-rennes.fr" readonly style="background: #FFF0F8; margin-bottom: 10px;">
+            
+            <label><strong>Objet :</strong></label><br>
+            <input type="text" id="mailObjet" placeholder="Tapez l'objet du mail" style="margin-bottom: 10px;">
+            
+            <label><strong>Message :</strong></label><br>
+            <textarea id="mailCorps" placeholder="Rédigez votre mail ici..."></textarea>
+        </div>
+    </div>
+
+    <!-- BOUTONS D'ACTION -->
+    <div class="btn-container no-print">
+        <button class="btn btn-print" onclick="window.print()">🖨️ Imprimer en PDF</button>
+        <button class="btn btn-sms" onclick="envoyerSMS()">📱 Envoyer SMS au client</button>
+    </div>
+
+    <script>
+        const products = {
+            'ADP-FLO-001': { name: 'Rose Charmeuse 50ml', stock: 8 },
+            'ADP-FLO-002': { name: 'Tendre Iris 100ml', stock: 5 },
+            'ADP-FLO-003': { name: 'Magnolia Majestueux 30ml', stock: 10 },
+            'ADP-FLO-004': { name: 'Fleur de Coton 50ml', stock: 7 },
+            'ADP-FLO-005': { name: 'Violette-Vanille 100ml', stock: 12 },
+            'ADP-FRU-001': { name: 'Framboise Irrésistible 50ml', stock: 9 },
+            'ADP-FRU-002': { name: 'Pink & Pop 100ml', stock: 12 },
+            'ADP-FRU-003': { name: 'Sunset Kiss (Litchi) 30ml', stock: 15 },
+            'ADP-FRU-004': { name: 'Fleur de Cerisier 50ml', stock: 6 },
+            'ADP-FRU-005': { name: 'Madame Bonheur 100ml', stock: 6 },
+            'ADP-FRU-006': { name: 'Summer Crush (Ananas-Pêche) 50ml', stock: 11 },
+            'ADP-FRU-007': { name: 'Bahia Samba (Coco-Nectarine) 100ml', stock: 8 },
+            'ADP-FRU-008': { name: 'Feuille de Fraisier 30ml', stock: 13 },
+            'ADP-GOU-001': { name: 'Little Sugar 100ml', stock: 2 },
+            'ADP-GOU-002': { name: 'Yummy Candy 50ml', stock: 14 },
+            'ADP-GOU-003': { name: 'Rêve de Coco 100ml', stock: 9 },
+            'ADP-GOU-004': { name: 'Vanille Coco 30ml', stock: 7 },
+            'ADP-GOU-005': { name: 'Black Cherry 50ml', stock: 10 },
+            'ADP-GOU-006': { name: 'Guimauve Tendresse 100ml', stock: 5 },
+            'ADP-GOU-007': { name: 'Amande Dragée 50ml', stock: 11 },
+            'ADP-GOU-008': { name: 'Barbe à Papa 30ml', stock: 16 },
+            'ADP-BOI-001': { name: 'Santal Envoûtant 100ml', stock: 4 },
+            'ADP-BOI-002': { name: 'Poire-Santal 50ml', stock: 8 },
+            'ADP-BOI-003': { name: 'Now or Never 100ml', stock: 6 },
+            'ADP-BOI-004': { name: 'Bois de Cachemire 30ml', stock: 12 },
+            'ADP-ORI-001': { name: 'Ambre-Vanille 50ml', stock: 9 },
+            'ADP-ORI-002': { name: 'Monoï des Îles 100ml', stock: 7 },
+            'ADP-ORI-003': { name: 'Vahiné des Îles 50ml', stock: 11 },
+            'ADP-ORI-004': { name: 'Fleur de Tiaré 100ml', stock: 5 },
+            'ADP-ORI-005': { name: 'Wonderful 30ml', stock: 13 },
+            'ADP-AGR-001': { name: 'Citronnade 50ml', stock: 10 },
+            'ADP-AGR-002': { name: 'Bergamote Fraîche 100ml', stock: 8 },
+            'ADP-AGR-003': { name: 'Mandarine Pétillante 30ml', stock: 14 },
+            'ADP-MUS-001': { name: 'Musc Blanc Cocon 50ml', stock: 15 },
+            'ADP-MUS-002': { name: 'Doux Baiser 100ml', stock: 6 },
+            'ADP-MUS-003': { name: 'Cocon Blanc 50ml', stock: 9 }
+        };
+
+        function updateProduct(row) {
+            const refInput = document.getElementById('ref' + row);
+            const prodCell = document.getElementById('prod' + row);
+            const statusCell = document.getElementById('status' + row);
+            const ref = refInput.value.toUpperCase().trim();
+            
+            if (products[ref]) {
+                prodCell.textContent = products[ref].name;
+                prodCell.style.color = 'black';
+                // Réinitialiser le statut si la référence est correcte
+                if (statusCell.textContent === '⚠️ Référence incorrecte') {
+                    statusCell.textContent = '-';
+                    statusCell.className = 'readonly';
+                }
+            } else if (ref === '') {
+                prodCell.textContent = '-';
+                prodCell.style.color = 'black';
+                statusCell.textContent = '-';
+                statusCell.className = 'readonly';
+            } else {
+                prodCell.textContent = '❌ Référence inconnue';
+                prodCell.style.color = 'red';
+                statusCell.textContent = '⚠️ Référence incorrecte';
+                statusCell.style.background = '#FFCDD2';
+                statusCell.style.color = '#C62828';
+            }
+        }
+
+        function updateStatus(row) {
+            const refInput = document.getElementById('ref' + row);
+            const cmdInput = document.getElementById('cmd' + row);
+            const prepInput = document.getElementById('prep' + row);
+            const statusCell = document.getElementById('status' + row);
+            
+            const ref = refInput.value.toUpperCase().trim();
+            const cmd = parseInt(cmdInput.value) || 0;
+            const prep = parseInt(prepInput.value) || 0;
+            
+            if (!products[ref] || cmd === 0) {
+                statusCell.textContent = '-';
+                statusCell.className = 'readonly';
+                return;
+            }
+            
+            const product = products[ref];
+            
+            // Mise à jour du stock
+            const stockRow = document.querySelector(`tr[data-ref="${ref}"]`);
+            if (stockRow) {
+                const stockPrepCell = stockRow.querySelector('.stock-prep');
+                const stockFinalCell = stockRow.querySelector('.stock-final');
+                const stockInitial = product.stock;
+                
+                stockPrepCell.textContent = prep;
+                const finalStock = stockInitial - prep;
+                stockFinalCell.textContent = finalStock;
+                
+                // Coloration du stock
+                if (finalStock < 0) {
+                    stockRow.className = 'rupture';
+                } else if (finalStock < 5) {
+                    stockRow.style.background = '#FFF3E0';
+                } else {
+                    stockRow.style.background = '';
+                }
+            }
+            
+            // Statut de préparation
+            if (prep < cmd) {
+                statusCell.textContent = '⚠️ RUPTURE (' + (cmd - prep) + ' manquant)';
+                statusCell.className = 'readonly rupture';
+            } else if (prep === cmd) {
+                statusCell.textContent = '✅ OK';
+                statusCell.className = 'readonly ok';
+            } else {
+                statusCell.textContent = '❌ Erreur de saisie';
+                statusCell.className = 'readonly';
+                statusCell.style.background = '#FFCDD2';
+            }
+        }
+
+        function envoyerSMS() {
+            const preparateur = document.getElementById('preparateur').value;
+            
+            if (!preparateur) {
+                alert('⚠️ Veuillez indiquer votre nom dans le champ "Préparé par"');
+                return;
+            }
+            
+            // Vérifier si au moins un article est préparé
+            let articlesPrepares = false;
+            for (let i = 1; i <= 7; i++) {
+                const prep = parseInt(document.getElementById('prep' + i).value) || 0;
+                if (prep > 0) {
+                    articlesPrepares = true;
+                    break;
+                }
+            }
+            
+            if (!articlesPrepares) {
+                alert('⚠️ Aucun article préparé. Vous devez d\'abord compléter la préparation.');
+                return;
+            }
+            
+            alert('✅ SMS envoyé à Mme MARTIN Sophie :\n\n"Bonjour, votre commande WEB-3847 est prête. Vous pouvez venir la retirer au magasin Adopt Rennes, Rue Le Bastard. À bientôt !"');
+        }
+    </script>
+</body>
+</html>

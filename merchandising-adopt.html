@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Merchandising Adopt - CAP EPC</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #FFE5F1 0%, #FFFFFF 100%);
+            padding: 20px;
+        }
+        .header {
+            background: linear-gradient(135deg, #FF1493 0%, #FF69B4 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .drapeau {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 0;
+            border: 2px solid white;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .drapeau > div {
+            width: 20px;
+            height: 40px;
+        }
+        .container {
+            max-width: 2000px;
+            margin: 0 auto;
+        }
+        .student-info {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 5px solid #FF1493;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        .student-info input {
+            padding: 8px;
+            border: 2px solid #FF1493;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .student-info label {
+            font-weight: bold;
+            color: #FF1493;
+        }
+        .instructions {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 5px solid #FF1493;
+        }
+        .instructions h2 {
+            color: #FF1493;
+            margin-bottom: 15px;
+        }
+        .instructions ul {
+            margin-left: 20px;
+            line-height: 1.8;
+        }
+        .profondeur-section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 3px solid #FF1493;
+            text-align: center;
+        }
+        .profondeur-section h3 {
+            color: #FF1493;
+            margin-bottom: 15px;
+        }
+        .shelf-profile {
+            display: inline-block;
+            background: #8B4513;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+        }
+        .bottles-row {
+            display: flex;
+            gap: 5px;
+            align-items: flex-end;
+        }
+        .bottle-profile {
+            width: 30px;
+            height: 60px;
+            background: linear-gradient(135deg, #FFB6D9 0%, #FF69B4 100%);
+            border: 2px solid #FF1493;
+            border-radius: 5px 5px 0 0;
+            position: relative;
+        }
+        .bottle-profile::before {
+            content: '';
+            position: absolute;
+            top: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 15px;
+            height: 10px;
+            background: #FF1493;
+            border-radius: 3px 3px 0 0;
+        }
+        .profondeur-label {
+            margin-top: 10px;
+            font-weight: bold;
+            color: #FF1493;
+            font-size: 1.1em;
+        }
+        .workspace {
+            display: grid;
+            grid-template-columns: 250px 1fr 1fr 250px;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .products-bank {
+            background: white;
+            padding: 12px;
+            border-radius: 10px;
+            border: 3px solid #FF1493;
+            height: 900px;
+            overflow-y: auto;
+        }
+        .products-bank h3 {
+            color: #FF1493;
+            margin-bottom: 8px;
+            font-size: 1em;
+            position: sticky;
+            top: 0;
+            background: white;
+            padding: 8px 0;
+            z-index: 10;
+        }
+        .products-bank p {
+            font-size: 0.75em;
+            color: #666;
+            margin-bottom: 12px;
+            position: sticky;
+            top: 40px;
+            background: white;
+            padding: 5px 0;
+            z-index: 9;
+        }
+        .family-group {
+            margin-bottom: 12px;
+        }
+        .family-title {
+            background: #FF1493;
+            color: white;
+            padding: 5px;
+            border-radius: 5px;
+            font-weight: bold;
+            margin-bottom: 6px;
+            font-size: 0.75em;
+        }
+        .bottle-item {
+            display: inline-block;
+            width: 60px;
+            margin: 3px;
+            cursor: move;
+            text-align: center;
+            transition: transform 0.2s;
+        }
+        .bottle-item:hover {
+            transform: scale(1.1);
+        }
+        .bottle-visual {
+            width: 32px;
+            height: 55px;
+            border: 2px solid #333;
+            border-radius: 8px 8px 0 0;
+            position: relative;
+            margin: 0 auto 5px;
+        }
+        .bottle-visual::before {
+            content: '';
+            position: absolute;
+            top: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 16px;
+            height: 10px;
+            border-radius: 5px 5px 0 0;
+        }
+        /* Couleurs par famille */
+        .color-caracteres { background: linear-gradient(135deg, #663399 0%, #8B5A9B 100%); }
+        .color-caracteres::before { background: #663399; }
+        .color-best { background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); }
+        .color-best::before { background: #FFD700; }
+        .color-fruites { background: linear-gradient(135deg, #FF1493 0%, #FF69B4 100%); }
+        .color-fruites::before { background: #FF1493; }
+        .color-gourmands { background: linear-gradient(135deg, #8B4513 0%, #A0522D 100%); }
+        .color-gourmands::before { background: #8B4513; }
+        .color-intenses { background: linear-gradient(135deg, #2F2F2F 0%, #4A4A4A 100%); }
+        .color-intenses::before { background: #2F2F2F; }
+        .color-nouveaute { background: linear-gradient(135deg, #FF00FF 0%, #FF69FF 100%); }
+        .color-nouveaute::before { background: #FF00FF; }
+        .color-floraux { background: linear-gradient(135deg, #FFB6D9 0%, #FFCCEE 100%); }
+        .color-floraux::before { background: #FFB6D9; }
+        .color-delicats { background: linear-gradient(135deg, #F5DEB3 0%, #FFE4B5 100%); }
+        .color-delicats::before { background: #F5DEB3; }
+        .color-solaires { background: linear-gradient(135deg, #FFA500 0%, #FFD700 100%); }
+        .color-solaires::before { background: #FFA500; }
+        
+        .bottle-name {
+            font-size: 0.55em;
+            line-height: 1.1;
+            color: #333;
+            font-weight: bold;
+            word-wrap: break-word;
+        }
+        .mural {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            border: 3px solid #FF1493;
+            height: 900px;
+            overflow-y: auto;
+        }
+        .mural-title {
+            background: #FF1493;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 12px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .shelf {
+            background: #8B4513;
+            padding: 12px 8px;
+            margin: 8px 0;
+            border-radius: 5px;
+            min-height: 85px;
+            border: 2px dashed #FFB6D9;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-items: flex-end;
+        }
+        .shelf.drag-over {
+            background: #FFF0F8;
+            border: 2px solid #FF1493;
+        }
+        .shelf-label {
+            font-size: 0.8em;
+            color: #FF1493;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+        .placed-bottle {
+            width: 42px;
+            text-align: center;
+            position: relative;
+        }
+        .placed-bottle-visual {
+            width: 32px;
+            height: 55px;
+            border: 2px solid #333;
+            border-radius: 8px 8px 0 0;
+            position: relative;
+            margin: 0 auto 5px;
+        }
+        .placed-bottle-visual::before {
+            content: '';
+            position: absolute;
+            top: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 16px;
+            height: 10px;
+            border-radius: 5px 5px 0 0;
+        }
+        .placed-bottle-name {
+            font-size: 0.5em;
+            line-height: 1.1;
+            color: #333;
+            font-weight: bold;
+        }
+        .placed-bottle .remove {
+            position: absolute;
+            top: -8px;
+            right: -6px;
+            background: #FF1493;
+            color: white;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 0.8em;
+            z-index: 5;
+        }
+        .question-section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 5px solid #FF1493;
+            margin-top: 20px;
+        }
+        .question-section h3 {
+            color: #FF1493;
+            margin-bottom: 15px;
+        }
+        .question {
+            background: #FFF9F0;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border: 2px solid #FFB6D9;
+        }
+        .question label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        .question input {
+            padding: 8px;
+            border: 2px solid #FF1493;
+            border-radius: 5px;
+            width: 100px;
+        }
+        .btn {
+            background: linear-gradient(135deg, #FF1493 0%, #FF69B4 100%);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 10px 5px;
+            transition: all 0.3s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 20, 147, 0.3);
+        }
+        .btn-secondary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .result {
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+        .result.success {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #28a745;
+        }
+        .result.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #dc3545;
+        }
+        .info-box {
+            background: #E1F5FE;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #2196F3;
+            margin: 10px 0;
+        }
+        .no-print {
+            /* Caché à l'impression */
+        }
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            body {
+                background: white;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="pageContent">
+        <div class="header">
+            <div class="drapeau">
+                <div style="background: #0055A4;"></div>
+                <div style="background: white;"></div>
+                <div style="background: #EF4135;"></div>
+            </div>
+            <h1>📦 EXERCICE DE MERCHANDISING</h1>
+            <div style="font-size: 1.3em; margin-top: 10px;">ADOPT PARFUMS - CAP EPC</div>
+        </div>
+
+        <div class="student-info">
+            <div>
+                <label>👤 Nom :</label>
+                <input type="text" id="studentName" placeholder="Votre nom">
+            </div>
+            <div>
+                <label>👤 Prénom :</label>
+                <input type="text" id="studentFirstName" placeholder="Votre prénom">
+            </div>
+            <div>
+                <label>📅 Date :</label>
+                <input type="date" id="studentDate" value="2025-11-16">
+            </div>
+        </div>
+
+        <div class="instructions no-print">
+            <h2>📋 Consignes</h2>
+            <ul>
+                <li><strong>Objectif :</strong> Organiser les produits Adopt sur les 2 muraux en créant les facings</li>
+                <li><strong>Action :</strong> Glissez-déposez les flacons des banques vers les étagères. <strong>Vous pouvez utiliser le même flacon plusieurs fois</strong></li>
+                <li><strong>Les couleurs :</strong> Chaque famille olfactive a une couleur pour vous repérer facilement !</li>
+                <li><strong>Règles :</strong> Regrouper par famille, observer la profondeur (8 flacons), Best et Intenses en hauteur des yeux</li>
+            </ul>
+        </div>
+
+        <div class="profondeur-section">
+            <h3>👁️ VUE DE PROFIL D'UNE ÉTAGÈRE</h3>
+            <p style="margin-bottom: 15px;">Observez combien de flacons peuvent être rangés en profondeur :</p>
+            <div class="shelf-profile">
+                <div class="bottles-row">
+                    <div class="bottle-profile"></div>
+                    <div class="bottle-profile"></div>
+                    <div class="bottle-profile"></div>
+                    <div class="bottle-profile"></div>
+                    <div class="bottle-profile"></div>
+                    <div class="bottle-profile"></div>
+                    <div class="bottle-profile"></div>
+                    <div class="bottle-profile"></div>
+                </div>
+            </div>
+            <div class="profondeur-label">❓ Combien de flacons en profondeur ? <input type="number" id="profondeur" style="width: 60px; padding: 5px; border: 2px solid #FF1493; border-radius: 5px;"> 
+            <button onclick="verifierProfondeur()" style="padding: 5px 15px; background: #FF1493; color: white; border: none; border-radius: 5px; cursor: pointer;">Vérifier</button>
+            <span id="resultProfondeur"></span>
+            </div>
+        </div>
+
+        <div class="workspace">
+            <!-- BANQUE MURAL 1 -->
+            <div class="products-bank">
+                <h3>🎨 MURAL 1</h3>
+                <p>💡 Réutilisable !</p>
+                
+                <div class="family-group">
+                    <div class="family-title">E1 : Les caractères 🟣</div>
+                    <div class="bottle-item" draggable="true" data-product="Diamond" data-color="caracteres">
+                        <div class="bottle-visual color-caracteres"></div>
+                        <div class="bottle-name">Diamond</div>
+                    </div>
+                    <div class="bottle-item" draggable="true" data-product="Night Felina" data-color="caracteres">
+                        <div class="bottle-visual color-caracteres"></div>
+                        <div class="bottle-name">Night Felina</div>
+                    </div>
+                    <div class="bottle-item" draggable="true" data-product="Belle d'orient" data-color="caracteres">
+                        <div class="bottle-visual color-caracteres"></div>
+                        <div class="bottle-name">Belle d'orient</div>
+                    </div>
+                    <div class="bottle-item" draggable="true" data-product="Ebene sensuelle" data-color="caracteres">
+                        <div class="bottle-visual color-caracteres"></div>
+                        <div class="bottle-name">Ebene sensuelle</div>
+                    </div>
+                    <div class="bottle-item" draggable="true" data-product="Patchouly" data-color="caracteres">
+                        <div class="bottle-visual color-caracteres"></div>
+                        <div class="bottle-name">Patchouly</div>
+                    </div>
+                    <div class="bottle-item" draggable="true" data-product="XXL Sensuality" data-color="caracteres">
+                        <div class="bottle-visual color-caracteres"></div>
+                        <div class="bottle-name">XXL Sensuality</div>
+                    </div>
+                    <div class="bottle-item" draggable="true" data-product="Black" data-color="caracteres">
+                        <div class="bottle-visual color-caracteres"></div>
+                        <div class="bottle-name">Black</div>
+                    </div>
+                </div>
+
+                <div class="family-group">
+                    <div class="family-title">E2 : Les best 🟡</div>
+                    <div class="bottle-item" draggable="true" data-product="Wonderful P et NP" data-color="best">
+                        <div class="bottle-visual color-best"></div>
+                        <div class="bottle-name">Wonderful P et NP</div>
+                    </div>
+                    <div class="bottle-item" draggable="true" data-product="Rose Noire" data-color="best">
+                        <div class="bottle-visual color-best"></div>
+                        <div class="bottle-name">Rose Noire</div>
+                    </div>
+                    <div class="bottle-item" draggable="true" data-product="Chrome" data-color="best">
+                        <div class="bottle-visual color-best"></div>
+                        <div class="bottle-name">Chrome</div>
+                    </div>
+                </div>
+
+                <div class="family-group">
+                    <div class="family-title">E3 : Les fruités 🔴</div>
+                    <div class="bottle-item" draggable="true" data-product="Midnight for her P et NP" data-color="fruites">
+                        <div class="bottle-visual color-fruites"></div>
+                        <div class="bottle-name">Midnight for her P et NP</div>
+                    </div>
+                    <div class="bottle-item" draggable="true" data-product="Rouge Nouveau" data-color="fruites">
+                        <div class="bottle-visual color-fruites"></div>
+                        <div class="bottle-name">Rouge Nouveau</div>
+                    </div>
+                    <div class="bottle-item" draggable="true" data-product="L'Or blanc" data-color="fruites">
+                        <div class="bottle-visual color-fruites"></div>
+                        <div class="bottle-name">L'Or blanc</div>
+                    </div>
+                    <div class="bottle-item" draggable="true" data-product="Au féminin" data-color="fruites">
+                        <div class="bottle-visual color-fruites"></div>
+                        <div class="bottle-name">Au féminin</div>
+                    </div>
+                </div>
+
+                <div class="family-group">
+                    <div class="family-title">E4 : Les gourmands 🟤</div>
+                    <div class="bottle-item" draggable="true" data-product="Yummy candy" data-color="gourmands">
+                        <div class="bottle-visual color-gourmands"></div>
+                        <div class="bottle-name">Yummy candy</div>
+                    </div>
+                    <div class="bottle-item" draggable="true" data-product="Dream" data-color="gourmands">
+                        <div class="bottle-visual color-gourmands"></div>
+                        <div class="bottle-name">Dream</div>
+                    </div>
+                    <div class="bottle-item" draggable="true" data-product="Glamourama" data-color="gourmands">
+                        <div class="bottle-visual color-gourmands"></div>
+                        <div class="bottle-name">Glamourama</div>
+                    </div>
+                    <div class="bottle-item" draggable="true" data-product="Love Infinity" data-color="gourmands">
+                        <div class="bottle-visual color-gourmands"></div>
+                        <div class="bottle-name">Love Infinity</div>
+                    </div>
+                    <div class="bottle-item" draggable="true" data-product="Starnight" data-color="gourmands">
+                        <div class="bottle-visual color-gourmands"></div>
+                        <div class="bottle-name">Starnight</div>
+                    </div>
+                </div>
+
+                <div class="family-group">
+                    <div class="family-title">E5 : Les gourmands 🟤</div>
+                    <div class="bottle-item" draggable="true" data-product="Lovemood" data-color="gourmands">
+                        <div class="bottle-visual color-gourmands"></div>
+                        <div class="bottle-name">Lovemood</div>
+                    </div>
+                    <div class="bottle-item" draggable="true" data-product="Golden Queen" data-color="gourmands">
+                        <div class="bottle-visual color-gourmands"></div>
+                        <div class="bottle-name">Golden Queen</div>
+                    </div>
+                    <div class="bottle-item" draggable="true" data-product="Lady glitter gold" data-color="gourmands">
+                        <div class="bottle-visual color-gourmands"></div>
+                        <div class="bottle-name">Lady glitter gold</div>
+                    </div>
+                    <div class="bottle-item" draggable="true" data-product="Fairyland" data-color="gourmands">
+                        <div class="bottle-visual color-gourmands"></div>
+                        <div class="bottle-name">Fairyland</div>
+                    </div>
+                </div>
+
+                <div class="family-group">
+                    <div class="family-title">E6 : Les gourmands 🟤</div>
+                    <div class="bottle-item" draggable="true" data-product="Vanille bourbon" data-color="gourmands">
+                        <div class="bottle-visual color-gourmands"></div>
+                        <div class="bottle-name">Vanille bourbon</div>
+                    </div>
+                    <div class="bottle-item" draggable="true" data-product="Terre de vanille" data-color="gourmands">
+                        <div class="bottle-visual color-gourmands"></div>
+                        <div class="bottle-name">Terre de vanille</div>
+                    </div>
+                    <div class="bottle-item" draggable="true" data-product="Vanille coco" data-color="gourmands">
+                        <div class="bottle-visual color-gourmands"></div>
+                        <div class="bottle-name">Vanille coco</div>
+                    </div>
+                    <div class="bottle-item" draggable="true" data-product="Summy vibes" data-color="gourmands">
+                        <div class="bottle-visual color-gourmands"></div>
+                        <div class="bottle-name">Summy vibes</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MURAL 1 -->
+            <div class="mural">
+                <div class="mural-title">MURAL 1 - GRANDS FORMATS</div>
+                <div class="shelf-label">Étagère 1 : Les caractères</div>
+                <div class="shelf" data-shelf="M1-E1"></div>
+                
+                <div class="shelf-label">Étagère 2 : Les best</div>
+                <div class="shelf" data-shelf="M1-E2"></div>
+                
+                <div class="shelf-label">Étagère 3 : Les fruités</div>
+                <div class="shelf" data-shelf="M1-E3"></div>
+                
+                <div class="shelf-label">Étagère 4 : Les gourmands</div>
+                <div class="shelf" data-shelf="M1-E4"></div>
+                
+                <div class="shelf-label">Étagère 5 : Les gourmands</div>
+                <div class="shelf" data-shelf="M1-E5"></div>
+                
+                <div class="shelf-label">Étagère 6 : Les gourmands</div>
+                <div class="shelf" data-shelf="M1-E6"></div>
+            </div>
+
+            <!-- MURAL 2 -->
+            <div class="mural">
+                <div class="mural-title">MURAL 2 - FORMATS VARIÉS</div>
+                <div class="shelf-label">Étagère 1 : Les Intenses</div>
+                <div class="shelf" data-shelf="M2-E1"></div>
+                
+                <div class="shelf-label">Étagère 2 : Les Intenses</div>
+                <div class="shelf" data-shelf="M2-E2"></div>
+                
+                <div class="shelf-label">Étagère 3 : La nouveauté ⭐</div>
+                <div class="shelf" data-shelf="M2-E3"></div>
+                
+                <div class="shelf-label">Étagère 4 : Les Floraux</div>
+                <div class="shelf" data-shelf="M2-E4"></div>
+                
+                <div class="shelf-label">Étagère 5 : Les Délicats</div>
+                <div class="shelf" data-shelf="M2-E5"></div>
+                
+                <div class="shelf-label">Étagère 6 : Les Solaires</div>
+                <div class="shelf" data-shelf="M2-E6"></div>
+            </div>
+
+            <!-- BANQUE MURAL 2 -->
+            <div class="products-bank">
+                <h3>🎨 MURAL 2</h3>
+                <p>💡 Réutilisable !</p>
+
+                <div class="family-group">
+                    <div class="family-title">E1 : Les Intenses ⚫</div>
+                    <div class="bottle-item" draggable="true" data-product="Bouquet d'Amour" data-color="intenses">
+                        <div class="bottle-visual color-intenses"></div>
+                        <div class="bottle-name">Bouquet d'Amour</div>
+                    </div>
+                    <div class="bottle-item" draggable="true" data-product="Starnight M2" data-color="intenses">
+                        <div class="bottle-visual color-intenses"></div>
+                        <div class="bottle-name">Starnight</div>
+                    </div>
+                    <div class="bottle-item" draggable="true" data-product="Tahiti Paradis" data-color="intenses">
+                        <div class="bottle-visual color-intenses"></div>
+                        <div class="bottle-name">Tahiti Paradis</div>
+                    </div>
+                    <div class="bottle-item" draggable="true" data-product="Cœur à cœur M2" data-color="intenses">
+                        <div class="bottle-visual color-intenses"></div>
+                        <div class="bottle-name">Cœur à cœur</div>
+                    </div>
+                    <div class="bottle-item" draggable="true" data-product="Love mood" data-color="intenses">
+                        <div class="bottle-visual color-intenses"></div>
+                        <div class="bottle-name">Love mood</div>
+                    </div>
+                </div>
+
+                <div class="family-group">
+                    <div class="family-title">E2 : Les Intenses ⚫</div>
+                    <div class="bottle-item" draggable="true" data-product="Rose Noire M2" data-color="intenses">
+                        <div class="bottle-visual color-intenses"></div>
+                        <div class="bottle-name">Rose Noire</div>
+                    </div>
+                    <div class="bottle-item" draggable="true" data-product="Wonderful M2" data-color="intenses">
+                        <div class="bottle-visual color-intenses"></div>
+                        <div class="bottle-name">Wonderful</div>
+                    </div>
+                    <div class="bottle-item" draggable="true" data-product="Yummy Candy M2" data-color="intenses">
+                        <div class="bottle-visual color-intenses"></div>
+                        <div class="bottle-name">Yummy Candy</div>
+                    </div>
+                    <div class="bottle-item" draggable="true" data-product="Monoï des îles" data-color="intenses">
+                        <div class="bottle-visual color-intenses"></div>
+                        <div class="bottle-name">Monoï des îles</div>
+                    </div>
+                </div>
+
+                <div class="family-group">
+                    <div class="family-title">E3 : La nouveauté ⭐🟣</div>
+                    <div class="bottle-item" draggable="true" data-product="SUBLIMISSIME INTENSE" data-color="nouveaute">
+                        <div class="bottle-visual color-nouveaute"></div>
+                        <div class="bottle-name">SUBLIMISSIME INTENSE</div>
+                    </div>
+                    <div class="bottle-item" draggable="true" data-product="MIDNIGHT FOR HER INTENSE" data-color="nouveaute">
+                        <div class="bottle-visual color-nouveaute"></div>
+                        <div class="bottle-name">MIDNIGHT FOR HER INTENSE</div>
+                    </div>
+                </div>
+
+                <div class="family-group">
+                    <div class="family-title">E4 : Les Floraux 🌸</div>
+                    <div class="bottle-item" draggable="true" data-product="Cœur à cœur" data-color="floraux">
+                        <div class="bottle-visual color-floraux"></div>
+                        <div class="bottle-name">Cœur à cœur</div>
+                    </div>
+                    <div class="bottle-item" draggable="true" data-product="Bouquet d'amour" data-color="floraux">
+                        <div class="bottle-visual color-floraux"></div>
+                        <div class="bottle-name">Bouquet d'amour</div>
+                    </div>
+                    <div class="bottle-item" draggable="true" data-product="Liberty dream" data-color="floraux">
+                        <div class="bottle-visual color-floraux"></div>
+                        <div class="bottle-name">Liberty dream</div>
+                    </div>
+                    <div class="bottle-item" draggable="true" data-product="Quelques notes d'amour" data-color="floraux">
+                        <div class="bottle-visual color-floraux"></div>
+                        <div class="bottle-name">Quelques notes d'amour</div>
+                    </div>
+                </div>
+
+                <div class="family-group">
+                    <div class="family-title">E5 : Les Délicats 🟠</div>
+                    <div class="bottle-item" draggable="true" data-product="Musc blanc" data-color="delicats">
+                        <div class="bottle-visual color-delicats"></div>
+                        <div class="bottle-name">Musc blanc</div>
+                    </div>
+                    <div class="bottle-item" draggable="true" data-product="Nostalgia" data-color="delicats">
+                        <div class="bottle-visual color-delicats"></div>
+                        <div class="bottle-name">Nostalgia</div>
+                    </div>
+                    <div class="bottle-item" draggable="true" data-product="Rêve de coco" data-color="delicats">
+                        <div class="bottle-visual color-delicats"></div>
+                        <div class="bottle-name">Rêve de coco</div>
+                    </div>
+                    <div class="bottle-item" draggable="true" data-product="Rose diamant" data-color="delicats">
+                        <div class="bottle-visual color-delicats"></div>
+                        <div class="bottle-name">Rose diamant</div>
+                    </div>
+                </div>
+
+                <div class="family-group">
+                    <div class="family-title">E6 : Les Solaires ☀️</div>
+                    <div class="bottle-item" draggable="true" data-product="Monoï des îlas P et NP" data-color="solaires">
+                        <div class="bottle-visual color-solaires"></div>
+                        <div class="bottle-name">Monoï des îlas P et NP</div>
+                    </div>
+                    <div class="bottle-item" draggable="true" data-product="Monoï blanc" data-color="solaires">
+                        <div class="bottle-visual color-solaires"></div>
+                        <div class="bottle-name">Monoï blanc</div>
+                    </div>
+                    <div class="bottle-item" draggable="true" data-product="Solaria" data-color="solaires">
+                        <div class="bottle-visual color-solaires"></div>
+                        <div class="bottle-name">Solaria</div>
+                    </div>
+                    <div class="bottle-item" draggable="true" data-product="Fleur des tropiques" data-color="solaires">
+                        <div class="bottle-visual color-solaires"></div>
+                        <div class="bottle-name">Fleur des tropiques</div>
+                    </div>
+                    <div class="bottle-item" draggable="true" data-product="Tahiti paradis" data-color="solaires">
+                        <div class="bottle-visual color-solaires"></div>
+                        <div class="bottle-name">Tahiti paradis</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="question-section">
+            <h3>🧮 CALCULS DE RÉAPPROVISIONNEMENT</h3>
+            
+            <div class="info-box">
+                <strong>📦 Règle de facing :</strong> Utilisez la profondeur que vous avez calculée (8 flacons) pour déterminer la capacité. Par exemple : 3 flacons de face × 8 en profondeur = 24 flacons au total.
+            </div>
+
+            <div class="question">
+                <label>Question 1 : L'étagère 3 du Mural 2 (La nouveauté) contient actuellement 15 flacons de "SUBLIMISSIME INTENSE". Pour un facing complet de 3 produits de face, combien de flacons devez-vous commander ?</label>
+                <input type="number" id="q1" placeholder="?"> flacons
+                <div id="result1"></div>
+            </div>
+
+            <div class="question">
+                <label>Question 2 : L'étagère 5 du Mural 2 a 10 flacons de "Musc blanc" en stock. Pour un facing de 2 produits de face, combien faut-il en commander ?</label>
+                <input type="number" id="q2" placeholder="?"> flacons
+                <div id="result2"></div>
+            </div>
+
+            <div class="question">
+                <label>Question 3 : Sur l'étagère 6 du Mural 1, vous avez 3 références de vanille. Chaque référence doit avoir un facing de 2 produits. Actuellement : Vanille bourbon (8), Terre de vanille (5), Vanille coco (11). Quel est le total de flacons à commander pour avoir un stock complet ?</label>
+                <input type="number" id="q3" placeholder="?"> flacons au total
+                <div id="result3"></div>
+            </div>
+
+            <button class="btn" onclick="verifierReponses()">✅ Vérifier mes réponses</button>
+            <button class="btn btn-secondary no-print" onclick="window.print()">🖨️ Imprimer en PDF</button>
+            <button class="btn btn-secondary no-print" onclick="envoyerAuProf()">📧 Envoyer au professeur</button>
+            <button class="btn no-print" onclick="resetExercice()">🔄 Recommencer</button>
+        </div>
+    </div>
+
+    <script>
+        let draggedElement = null;
+
+        function verifierProfondeur() {
+            const input = document.getElementById('profondeur').value;
+            const result = document.getElementById('resultProfondeur');
+            if (parseInt(input) === 8) {
+                result.innerHTML = ' ✅ Correct ! 8 flacons en profondeur';
+                result.style.color = '#28a745';
+                result.style.fontWeight = 'bold';
+            } else {
+                result.innerHTML = ' ❌ Recomptez les flacons';
+                result.style.color = '#dc3545';
+                result.style.fontWeight = 'bold';
+            }
+        }
+
+        // Gestion du drag & drop
+        document.querySelectorAll('.bottle-item').forEach(item => {
+            item.addEventListener('dragstart', function(e) {
+                draggedElement = this;
+                e.dataTransfer.effectAllowed = 'copy';
+            });
+
+            item.addEventListener('dragend', function() {
+                draggedElement = null;
+            });
+        });
+
+        document.querySelectorAll('.shelf').forEach(shelf => {
+            shelf.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.classList.add('drag-over');
+            });
+
+            shelf.addEventListener('dragleave', function() {
+                this.classList.remove('drag-over');
+            });
+
+            shelf.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.classList.remove('drag-over');
+                
+                if (draggedElement) {
+                    const productName = draggedElement.dataset.product;
+                    const colorClass = draggedElement.dataset.color;
+                    addBottleToShelf(this, productName, colorClass);
+                }
+            });
+        });
+
+        function addBottleToShelf(shelf, productName, colorClass) {
+            const placedBottle = document.createElement('div');
+            placedBottle.className = 'placed-bottle';
+            placedBottle.innerHTML = `
+                <div class="placed-bottle-visual color-${colorClass}"></div>
+                <div class="placed-bottle-name">${productName}</div>
+                <span class="remove" onclick="removeBottle(this)">×</span>
+            `;
+            shelf.appendChild(placedBottle);
+        }
+
+        function removeBottle(btn) {
+            btn.parentElement.remove();
+        }
+
+        function verifierReponses() {
+            const q1 = parseInt(document.getElementById('q1').value);
+            const result1 = document.getElementById('result1');
+            if (q1 === 9) {
+                result1.className = 'result success';
+                result1.textContent = '✅ Correct ! Facing complet (3 × 8 = 24) - Stock actuel (15) = 9 flacons';
+            } else {
+                result1.className = 'result error';
+                result1.textContent = '❌ Incorrect. Calcul : (3 produits de face × 8 profondeur) - 15 = ?';
+            }
+
+            const q2 = parseInt(document.getElementById('q2').value);
+            const result2 = document.getElementById('result2');
+            if (q2 === 6) {
+                result2.className = 'result success';
+                result2.textContent = '✅ Correct ! Facing (2 × 8 = 16) - Stock actuel (10) = 6 flacons';
+            } else {
+                result2.className = 'result error';
+                result2.textContent = '❌ Incorrect. Calcul : (2 produits de face × 8 profondeur) - 10 = ?';
+            }
+
+            const q3 = parseInt(document.getElementById('q3').value);
+            const result3 = document.getElementById('result3');
+            if (q3 === 24) {
+                result3.className = 'result success';
+                result3.textContent = '✅ Correct ! V.bourbon (8) + Terre vanille (11) + V.coco (5) = 24 flacons';
+            } else {
+                result3.className = 'result error';
+                result3.textContent = '❌ Incorrect. Pour chaque produit : (2 × 8) - stock actuel, puis additionnez tout';
+            }
+        }
+
+        function resetExercice() {
+            document.querySelectorAll('.placed-bottle').forEach(p => p.remove());
+            document.querySelectorAll('input[type="number"]').forEach(input => input.value = '');
+            document.querySelectorAll('.result').forEach(r => r.textContent = '');
+            document.getElementById('resultProfondeur').textContent = '';
+        }
+
+        async function envoyerAuProf() {
+            const nom = document.getElementById('studentName').value;
+            const prenom = document.getElementById('studentFirstName').value;
+            const date = document.getElementById('studentDate').value;
+
+            if (!nom || !prenom) {
+                alert('⚠️ Veuillez remplir votre nom et prénom avant d\'envoyer !');
+                return;
+            }
+
+            alert('📸 Capture de votre travail en cours...');
+
+            try {
+                const canvas = await html2canvas(document.getElementById('pageContent'), {
+                    scale: 2,
+                    logging: false,
+                    useCORS: true
+                });
+
+                canvas.toBlob(function(blob) {
+                    const formData = new FormData();
+                    formData.append('file', blob, `Merchandising_${nom}_${prenom}_${date}.png`);
+
+                    const mailtoLink = `mailto:nathalie.tran@ac-rennes.fr?subject=Exercice Merchandising - ${prenom} ${nom}&body=Bonjour Madame,%0D%0A%0D%0AJe vous envoie mon exercice de merchandising Adopt.%0D%0A%0D%0ANom : ${nom}%0D%0APrénom : ${prenom}%0D%0ADate : ${date}%0D%0A%0D%0ACordialement,%0D%0A${prenom} ${nom}%0D%0A%0D%0A(Veuillez joindre la capture d'écran manuellement)`;
+                    
+                    // Téléchargement automatique de l'image
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `Merchandising_${nom}_${prenom}_${date}.png`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+
+                    // Ouverture du mail
+                    setTimeout(() => {
+                        window.location.href = mailtoLink;
+                    }, 500);
+                }, 'image/png');
+
+            } catch (error) {
+                console.error('Erreur:', error);
+                alert('❌ Erreur lors de la capture. Veuillez utiliser le bouton "Imprimer en PDF" à la place.');
+            }
+        }
+    </script>
+</body>
+</html>
