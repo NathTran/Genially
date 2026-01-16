@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mission 5 - Rotation des Produits</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #667eea;
+        }
+        
+        .header h1 {
+            color: #667eea;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        
+        .date-info {
+            background: #e0e7ff;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-size: 18px;
+            font-weight: bold;
+            color: #4338ca;
+            text-align: center;
+        }
+        
+        .student-info {
+            background: #fef3c7;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border: 2px solid #f59e0b;
+        }
+        
+        .student-info input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        
+        .consignes {
+            background: #dbeafe;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border-left: 5px solid #3b82f6;
+        }
+        
+        .consignes h2 {
+            color: #1e40af;
+            margin-bottom: 15px;
+        }
+        
+        .consignes ul {
+            margin-left: 20px;
+        }
+        
+        .consignes li {
+            margin: 10px 0;
+            line-height: 1.6;
+        }
+        
+        .zones-container {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .zone {
+            background: #f9fafb;
+            border: 3px solid #d1d5db;
+            border-radius: 15px;
+            padding: 20px;
+            min-height: 400px;
+        }
+        
+        .zone h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 20px;
+        }
+        
+        .reserve h2 {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .rayon-container {
+            background: #f0fdf4;
+        }
+        
+        .rayon-container h2 {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .corbeille h2 {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .rayon-slots {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .rayon-slot {
+            background: white;
+            border: 2px dashed #10b981;
+            border-radius: 8px;
+            padding: 15px;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            position: relative;
+        }
+        
+        .rayon-slot::before {
+            content: attr(data-position);
+            position: absolute;
+            left: -35px;
+            background: #10b981;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        
+        .rayon-slot.over {
+            background: #d1fae5;
+            border-color: #059669;
+        }
+        
+        .produit {
+            background: white;
+            border: 3px solid #6366f1;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            cursor: move;
+            transition: all 0.3s;
+        }
+        
+        .produit:hover {
+            transform: scale(1.02);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .produit.dragging {
+            opacity: 0.5;
+        }
+        
+        .produit-nom {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 8px;
+            color: #1f2937;
+        }
+        
+        .produit-dlc {
+            display: inline-block;
+            padding: 5px 12px;
+            background: #e0e7ff;
+            color: #4338ca;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        
+        .drop-zone {
+            min-height: 100px;
+            border: 2px dashed #d1d5db;
+            border-radius: 10px;
+            padding: 10px;
+        }
+        
+        .drop-zone.over {
+            background: #e0f2fe;
+            border-color: #0284c7;
+        }
+        
+        .corbeille .drop-zone {
+            border-color: #ef4444;
+            background: #fef2f2;
+            min-height: 150px;
+            padding: 10px;
+        }
+        
+        .corbeille .drop-zone.over {
+            background: #fee2e2;
+            border-color: #dc2626;
+        }
+        
+        .corbeille .produit {
+            border-color: #ef4444;
+            background: #fee2e2;
+            margin-bottom: 10px;
+        }
+        
+        .actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+        
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-print {
+            background: #10b981;
+            color: white;
+        }
+        
+        .btn-print:hover {
+            background: #059669;
+            transform: translateY(-2px);
+        }
+        
+        .btn-reset {
+            background: #6b7280;
+            color: white;
+        }
+        
+        .btn-reset:hover {
+            background: #4b5563;
+        }
+        
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            
+            .consignes, .actions, .btn {
+                display: none;
+            }
+            
+            .container {
+                box-shadow: none;
+                padding: 20px;
+            }
+            
+            .produit {
+                cursor: default;
+                break-inside: avoid;
+            }
+            
+            .header h1::after {
+                content: " - Résultat de l'élève";
+            }
+        }
+        
+        .legende {
+            background: #f3f4f6;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        
+        .legende h3 {
+            margin-bottom: 10px;
+            color: #374151;
+        }
+        
+        .legende-item {
+            display: inline-block;
+            margin-right: 20px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏪 Mission 5 : Rotation des Produits</h1>
+            <p style="color: #6b7280; font-size: 18px;">Réaliser la rotation en respectant le FIFO</p>
+        </div>
+
+        <div class="student-info">
+            <label for="studentName" style="font-weight: bold; font-size: 16px; color: #92400e;">
+                📝 Nom et Prénom de l'élève :
+            </label>
+            <input type="text" id="studentName" placeholder="Entrez votre nom et prénom">
+        </div>
+
+        <div class="date-info">
+            📅 Date du jour : <span style="font-size: 22px;">15/06/2026</span>
+        </div>
+
+        <div class="consignes">
+            <h2>📋 Consignes</h2>
+            <ul>
+                <li><strong>DLC</strong> (Date Limite de Consommation) = limite <strong>impérative</strong>. Si dépassée, le produit doit être <strong>immédiatement retiré</strong>.</li>
+                <li>Les produits périmant <strong>aujourd'hui</strong> doivent également être retirés du rayon.</li>
+                <li>Rangez les produits dans le rayon en respectant la règle : <strong>DLC la plus courte DEVANT</strong>.</li>
+                <li>Appliquez le principe <strong>FIFO</strong> : First In, First Out (Premier entré, premier sorti).</li>
+                <li><strong>Déplacez</strong> les produits en les faisant glisser avec la souris dans les zones appropriées.</li>
+            </ul>
+        </div>
+
+        <div class="zones-container">
+            <!-- Réserve -->
+            <div class="zone reserve">
+                <h2>📦 RÉSERVE</h2>
+                <div class="drop-zone" id="reserve" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+                    <div class="produit" draggable="true" ondragstart="drag(event)" id="p1">
+                        <div class="produit-nom">Yaourt Nature</div>
+                        <div class="produit-dlc">DLC : 16/06/2026</div>
+                    </div>
+                    <div class="produit" draggable="true" ondragstart="drag(event)" id="p2">
+                        <div class="produit-nom">Yaourt Nature</div>
+                        <div class="produit-dlc">DLC : 21/06/2026</div>
+                    </div>
+                    <div class="produit" draggable="true" ondragstart="drag(event)" id="p3">
+                        <div class="produit-nom">Yaourt Nature</div>
+                        <div class="produit-dlc">DLC : 18/06/2026</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rayon -->
+            <div class="zone rayon-container">
+                <h2>🏪 RAYON (Facing du devant vers le fond)</h2>
+                <div class="rayon-slots">
+                    <div class="rayon-slot" data-position="1️⃣" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+                        <div class="produit" draggable="true" ondragstart="drag(event)" id="p4">
+                            <div class="produit-nom">Yaourt Nature</div>
+                            <div class="produit-dlc">DLC : 15/06/2026</div>
+                        </div>
+                    </div>
+                    <div class="rayon-slot" data-position="2️⃣" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+                        <div class="produit" draggable="true" ondragstart="drag(event)" id="p5">
+                            <div class="produit-nom">Yaourt Nature</div>
+                            <div class="produit-dlc">DLC : 20/06/2026</div>
+                        </div>
+                    </div>
+                    <div class="rayon-slot" data-position="3️⃣" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)"></div>
+                    <div class="rayon-slot" data-position="4️⃣" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+                        <div class="produit" draggable="true" ondragstart="drag(event)" id="p6">
+                            <div class="produit-nom">Yaourt Nature</div>
+                            <div class="produit-dlc">DLC : 17/06/2026</div>
+                        </div>
+                    </div>
+                    <div class="rayon-slot" data-position="5️⃣" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+                        <div class="produit" draggable="true" ondragstart="drag(event)" id="p7">
+                            <div class="produit-nom">Yaourt Nature</div>
+                            <div class="produit-dlc">DLC : 22/06/2026</div>
+                        </div>
+                    </div>
+                    <div class="rayon-slot" data-position="6️⃣" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+                        <div class="produit" draggable="true" ondragstart="drag(event)" id="p8">
+                            <div class="produit-nom">Yaourt Nature</div>
+                            <div class="produit-dlc">DLC : 14/06/2026</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Corbeille -->
+            <div class="zone corbeille">
+                <h2>🗑️ CORBEILLE<br>(Produits périmés)</h2>
+                <div class="drop-zone" id="corbeille" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+                </div>
+            </div>
+        </div>
+
+        <div class="legende">
+            <h3>💡 Aide mémoire :</h3>
+            <div class="legende-item">📦 = Produits en attente</div>
+            <div class="legende-item">🏪 = Rayon visible par les clients</div>
+            <div class="legende-item">🗑️ = Produits à éliminer</div>
+            <div class="legende-item">1️⃣ = Position DEVANT (vu en premier par le client)</div>
+        </div>
+
+        <div class="actions">
+            <button class="btn btn-print" onclick="imprimerPDF()">🖨️ Imprimer en PDF</button>
+            <button class="btn btn-reset" onclick="reinitialiser()">🔄 Recommencer</button>
+        </div>
+    </div>
+
+    <script>
+        let produitsInitiaux = {};
+
+        // Sauvegarder l'état initial au chargement
+        window.onload = function() {
+            sauvegarderEtatInitial();
+        };
+
+        function sauvegarderEtatInitial() {
+            produitsInitiaux = {
+                reserve: document.getElementById('reserve').innerHTML,
+                corbeille: document.getElementById('corbeille').innerHTML,
+                slots: []
+            };
+            
+            const slots = document.querySelectorAll('.rayon-slot');
+            slots.forEach(slot => {
+                produitsInitiaux.slots.push(slot.innerHTML);
+            });
+        }
+
+        function allowDrop(ev) {
+            ev.preventDefault();
+            ev.currentTarget.classList.add('over');
+        }
+
+        function dragLeave(ev) {
+            ev.currentTarget.classList.remove('over');
+        }
+
+        function drag(ev) {
+            ev.dataTransfer.setData("text", ev.target.id);
+            ev.target.classList.add('dragging');
+        }
+
+        function drop(ev) {
+            ev.preventDefault();
+            ev.currentTarget.classList.remove('over');
+            
+            const data = ev.dataTransfer.getData("text");
+            const produit = document.getElementById(data);
+            
+            if (produit) {
+                produit.classList.remove('dragging');
+                
+                // Si c'est un slot de rayon, on ne peut mettre qu'un seul produit
+                if (ev.currentTarget.classList.contains('rayon-slot')) {
+                    // Vider le slot d'abord
+                    ev.currentTarget.innerHTML = '';
+                    ev.currentTarget.appendChild(produit);
+                } else {
+                    // Pour réserve et corbeille, on peut empiler
+                    ev.currentTarget.appendChild(produit);
+                }
+            }
+        }
+
+        function imprimerPDF() {
+            const nom = document.getElementById('studentName').value.trim();
+            if (!nom) {
+                alert('⚠️ Veuillez entrer votre nom avant d\'imprimer !');
+                return;
+            }
+            
+            window.print();
+        }
+
+        function reinitialiser() {
+            if (confirm('Voulez-vous vraiment recommencer l\'exercice ?')) {
+                document.getElementById('reserve').innerHTML = produitsInitiaux.reserve;
+                document.getElementById('corbeille').innerHTML = produitsInitiaux.corbeille;
+                
+                const slots = document.querySelectorAll('.rayon-slot');
+                slots.forEach((slot, index) => {
+                    slot.innerHTML = produitsInitiaux.slots[index];
+                });
+                
+                document.getElementById('studentName').value = '';
+            }
+        }
+    </script>
+</body>
+</html>
