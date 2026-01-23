@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Inventaire Biscuits – Séquence Interactive CAP EPC</title>
+
+<!-- STYLE GLOBAL -->
+<style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f7f7f7; }
+    h1, h2 { color: #1b4f72; }
+    .step { display: none; background: white; padding: 20px; border-radius: 8px; }
+    .active { display: block; }
+    .bloc { border: 1px solid #ccc; padding: 15px; margin-bottom: 25px; border-radius: 6px; background: #fff; }
+    .consigne { font-weight: bold; color: #b03a2e; }
+    .draggable { padding: 10px; background: #e8f0fe; border: 1px solid #1b4f72; margin: 8px 0; cursor: grab; border-radius: 5px; }
+    .dropzone { border: 2px dashed #aaa; padding: 10px; min-height: 50px; margin-bottom: 10px; border-radius: 5px; }
+    .btn { padding: 10px 20px; background: #1b4f72; color: white; border-radius: 5px; text-decoration: none; cursor: pointer; }
+    .btn:disabled { background: #999; cursor: not-allowed; }
+    .success { color: green; font-weight: bold; }
+    .error { color: red; font-weight: bold; }
+</style>
+
+<!-- LIBRAIRIE PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+</head>
+<body>
+
+<h1>Inventaire – Rayon Biscuits (Séquence Interactive CAP EPC)</h1>
+
+<!-- NAVIGATION VERROUILLÉE -->
+<nav>
+    <button class="btn" onclick="showStep(1)">Étape 1</button>
+    <button class="btn" id="btn2" onclick="showStep(2)" disabled>Étape 2</button>
+    <button class="btn" id="btn3" onclick="showStep(3)" disabled>Étape 3</button>
+    <button class="btn" id="btn4" onclick="showStep(4)" disabled>Étape 4</button>
+    <button class="btn" id="btn5" onclick="showStep(5)" disabled>Étape 5</button>
+    <button class="btn" id="btn6" onclick="showStep(6)" disabled>Étape 6</button>
+</nav>
+
+<hr>
+
+<!-- ÉTAPE 1 : GLISSER-DÉPOSER MÉTHODE -->
+<div id="step1" class="step active">
+    <h2>Étape 1 – Remettre la méthode de comptage dans l’ordre</h2>
+
+    <p class="consigne">Glisse les étapes dans le bon ordre (1 → 4). Tu ne pourras pas passer à l’étape suivante si l’ordre est incorrect.</p>
+
+    <div class="bloc">
+        <h3>Éléments à ordonner</h3>
+
+        <div id="items">
+            <div class="draggable" draggable="true" id="etapeA">Commencer en haut du rayon</div>
+            <div class="draggable" draggable="true" id="etapeB">Compter de gauche à droite</div>
+            <div class="draggable" draggable="true" id="etapeC">Descendre étagère par étagère</div>
+            <div class="draggable" draggable="true" id="etapeD">Vérifier les références (packagings ressemblants)</div>
+        </div>
+    </div>
+
+    <div class="bloc">
+        <h3>Dépose ici dans l’ordre</h3>
+
+        <div class="dropzone" id="zone1"></div>
+        <div class="dropzone" id="zone2"></div>
+        <div class="dropzone" id="zone3"></div>
+        <div class="dropzone" id="zone4"></div>
+    </div>
+
+    <p id="feedback1"></p>
+
+    <button class="btn" onclick="checkStep1()">Valider l’étape 1</button>
+    <button class="btn" onclick="downloadPDF(1)" id="pdf1" disabled>Télécharger PDF Étape 1</button>
+</div>
+
+<script>
+// NAVIGATION ENTRE ÉTAPES
+function showStep(n) {
+    document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+    document.getElementById("step" + n).classList.add('active');
+}
+
+// DRAG & DROP
+let dragged;
+
+document.addEventListener("dragstart", function(event) {
+    dragged = event.target;
+});
+
+document.addEventListener("dragover", function(event) {
+    event.preventDefault();
+});
+
+document.addEventListener("drop", function(event) {
+    if (event.target.classList.contains("dropzone")) {
+        event.preventDefault();
+        event.target.innerHTML = "";
+        event.target.appendChild(dragged);
+    }
+});
+
+// VALIDATION ÉTAPE 1
+function checkStep1() {
+    const order = [
+        "etapeA", // Commencer en haut
+        "etapeB", // Gauche → droite
+        "etapeC", // Descendre
+        "etapeD"  // Vérifier références
+    ];
+
+    let ok = true;
+
+    for (let i = 1; i <= 4; i++) {
+        const zone = document.getElementById("zone" + i);
+        if (!zone.firstChild || zone.firstChild.id !== order[i - 1]) {
+            ok = false;
+        }
+    }
+
+    const feedback = document.getElementById("feedback1");
+
+    if (ok) {
+        feedback.innerHTML = "<span class='success'>Bravo ! Tu peux passer à l’étape suivante.</span>";
+        document.getElementById("btn2").disabled = false;
+        document.getElementById("pdf1").disabled = false;
+    } else {
+        feedback.innerHTML = "<span class='error'>L’ordre n’est pas correct. Recommence.</span>";
+    }
+}
+
+// PDF
+function downloadPDF(step) {
+    const element = document.getElementById("step" + step);
+    html2pdf().from(element).save("etape" + step + ".pdf");
+}
+</script>
+
