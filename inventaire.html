@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Inventaire Stocks - Leclerc</title>
+    <style>
+        :root { --blue: #0066ad; --orange: #f39200; --purple: #7b1fa2; --red: #e53935; --green: #43a047; }
+        body { font-family: 'Arial', sans-serif; background: #f4f7f9; padding: 20px; color: #333; }
+        .container { max-width: 1100px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        
+        h1 { color: var(--blue); border-bottom: 6px solid var(--orange); text-align: center; text-transform: uppercase; padding-bottom:10px; }
+        h2 { color: white; background: var(--blue); padding: 12px; border-radius: 8px; font-size: 1.1em; margin-top: 30px; }
+        .context { background: #e3f2fd; padding: 15px; border-left: 5px solid var(--blue); font-style: italic; margin-bottom: 20px; }
+
+        /* 1. PROCEDURE */
+        .step-box { background: #fff3e0; padding: 20px; border: 1px solid #fedcba; border-radius: 10px; }
+        .step-row { margin: 10px 0; display: flex; align-items: center; }
+        .step-row input { width: 45px; height: 30px; margin-right: 15px; text-align: center; font-weight: bold; border: 2px solid var(--orange); }
+
+        /* 2. VISUEL RAYON */
+        .linear-view { background: #e0e0e0; border: 10px solid #888; border-radius: 10px; padding: 20px; margin: 20px 0; }
+        .shelf { 
+            display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;
+            border-bottom: 12px solid #bbb; background: #fff; margin-bottom: 40px; 
+            padding: 10px; align-items: end; 
+        }
+        .product-group { display: flex; flex-direction: column; align-items: center; }
+        .img-stack { display: flex; flex-direction: column-reverse; align-items: center; }
+        .bis-img { width: 60px; height: 35px; object-fit: contain; margin-bottom: 1px; }
+        .label { width: 100%; background: var(--blue); color: white; text-align: center; font-size: 0.75em; font-weight: bold; padding: 6px 0; border-radius: 3px; margin-top: 5px; }
+
+        /* 3. RÉSERVE */
+        .reserve-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin: 20px 0; }
+        .carton { background: #d2b48c; border: 2px solid #8b4513; padding: 10px; text-align: center; font-weight: bold; border-radius: 5px; }
+
+        /* 4. TABLEAU */
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.85em; }
+        th { background: var(--blue); color: white; padding: 10px; border: 1px solid #ddd; }
+        td { border: 1px solid #ddd; padding: 6px; text-align: center; font-weight: bold; }
+        .input-tab { width: 50px; padding: 4px; text-align: center; border: 1px solid #ccc; font-weight: bold; }
+        .total-row { background: #ffd54f; }
+
+        .status { font-weight: bold; margin-left: 10px; padding: 2px 8px; border-radius: 4px; }
+        .btn { background: var(--orange); color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        .btn-print { background: #2c3e50; color: white; width: 100%; padding: 20px; border-radius: 10px; font-size: 1.2em; cursor: pointer; border: none; margin-top: 30px; }
+        @media print { .no-print { display: none !important; } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>📊 Inventaire de Fin d'Année : Rayon Biscuits</h1>
+
+    <div class="context">
+        "Bonjour, je suis Monsieur Girardin. Avant de commencer l'inventaire physique, rappelez-moi la procédure et soyez vigilants : en rayon, chaque unité visible cache une 2ème boîte derrière elle !"
+    </div>
+
+    <section>
+        <h2>1. Préparation de l'inventaire</h2>
+        <div class="step-box">
+            <p><i>Numérotez les étapes de 1 à 5 selon la logique métier :</i></p>
+            <div class="step-row"><input type="number" id="s1"> Compter physiquement et noter les quantités réelles.</div>
+            <div class="step-row"><input type="number" id="s2"> Nettoyer le rayon et réaliser un facing parfait.</div>
+            <div class="step-row"><input type="number" id="s3"> Comparer le stock réel obtenu avec le stock théorique.</div>
+            <div class="step-row"><input type="number" id="s4"> Fermer le magasin au public.</div>
+            <div class="step-row"><input type="number" id="s5"> Analyser les écarts et corriger le stock.</div>
+            <button class="btn no-print" onclick="checkSteps()">Vérifier la procédure</button> <span id="r1" class="status"></span>
+        </div>
+    </section>
+
+    <section>
+        <h2>2. Observation du Rayon (Surface de Vente)</h2>
+        <p style="color:red; font-weight:bold;">⚠️ RAPPEL : Profondeur de 2 unités par facing visible.</p>
+        <div class="linear-view">
+            <div class="shelf">
+                <div class="product-group"><div class="img-stack"><img src="https://i.postimg.cc/rzzqD0Sn/prince.webp" class="bis-img"><img src="https://i.postimg.cc/rzzqD0Sn/prince.webp" class="bis-img"><img src="https://i.postimg.cc/rzzqD0Sn/prince.webp" class="bis-img"><img src="https://i.postimg.cc/rzzqD0Sn/prince.webp" class="bis-img"></div><div class="label">Prince Lu</div></div>
+                <div class="product-group"><div class="img-stack"><img src="https://i.postimg.cc/dZ7Fppst/bn.jpg" class="bis-img"><img src="https://i.postimg.cc/dZ7Fppst/bn.jpg" class="bis-img"><img src="https://i.postimg.cc/dZ7Fppst/bn.jpg" class="bis-img"></div><div class="label">BN Choco</div></div>
+                <div class="product-group"><div class="img-stack"><img src="https://i.postimg.cc/Fkfv88rc/oreo.jpg" class="bis-img"><img src="https://i.postimg.cc/Fkfv88rc/oreo.jpg" class="bis-img"><img src="https://i.postimg.cc/Fkfv88rc/oreo.jpg" class="bis-img"><img src="https://i.postimg.cc/Fkfv88rc/oreo.jpg" class="bis-img"><img src="https://i.postimg.cc/Fkfv88rc/oreo.jpg" class="bis-img"></div><div class="label">Oreo</div></div>
+                <div class="product-group"><div class="img-stack"><img src="https://i.postimg.cc/1VgS22mX/granola.jpg" class="bis-img"><img src="https://i.postimg.cc/1VgS22mX/granola.jpg" class="bis-img"><img src="https://i.postimg.cc/1VgS22mX/granola.jpg" class="bis-img"></div><div class="label">Granola</div></div>
+                <div class="product-group"><div class="img-stack"><img src="https://i.postimg.cc/7bbq5GgQ/pims.jpg" class="bis-img"><img src="https://i.postimg.cc/7bbq5GgQ/pims.jpg" class="bis-img"></div><div class="label">Pims</div></div>
+            </div>
+            <div class="shelf">
+                <div class="product-group"><div class="img-stack"><img src="https://i.postimg.cc/ctKW22xv/chamonix.jpg" class="bis-img"><img src="https://i.postimg.cc/ctKW22xv/chamonix.jpg" class="bis-img"></div><div class="label">Chamonix</div></div>
+                <div class="product-group"><div class="img-stack">
+                    <img src="https://i.postimg.cc/bSGPWWy1/pepito.jpg" class="bis-img"><img src="https://i.postimg.cc/bSGPWWy1/pepito.jpg" class="bis-img"><img src="https://i.postimg.cc/bSGPWWy1/pepito.jpg" class="bis-img"><img src="https://i.postimg.cc/bSGPWWy1/pepito.jpg" class="bis-img"><img src="https://i.postimg.cc/bSGPWWy1/pepito.jpg" class="bis-img">
+                    <img src="https://i.postimg.cc/bSGPWWy1/pepito.jpg" class="bis-img"><img src="https://i.postimg.cc/bSGPWWy1/pepito.jpg" class="bis-img"><img src="https://i.postimg.cc/bSGPWWy1/pepito.jpg" class="bis-img"><img src="https://i.postimg.cc/bSGPWWy1/pepito.jpg" class="bis-img"><img src="https://i.postimg.cc/bSGPWWy1/pepito.jpg" class="bis-img">
+                </div><div class="label">Pepito</div></div>
+                <div class="product-group"><div class="img-stack"><img src="https://i.postimg.cc/gLwpQQzy/petitsoceur.jpg" class="bis-img"><img src="https://i.postimg.cc/gLwpQQzy/petitsoceur.jpg" class="bis-img"></div><div class="label">P. Coeurs</div></div>
+                <div class="product-group"><div class="img-stack"><img src="https://i.postimg.cc/YL47ZZrY/palmito.jpg" class="bis-img"><img src="https://i.postimg.cc/YL47ZZrY/palmito.jpg" class="bis-img"></div><div class="label">Palmito</div></div>
+                <div class="product-group"><div class="img-stack"><img src="https://i.postimg.cc/1VgS22mR/barquetteluc.jpg" class="bis-img"><img src="https://i.postimg.cc/1VgS22mR/barquetteluc.jpg" class="bis-img"><img src="https://i.postimg.cc/1VgS22mR/barquetteluc.jpg" class="bis-img"><img src="https://i.postimg.cc/1VgS22mR/barquetteluc.jpg" class="bis-img"></div><div class="label">Barquette</div></div>
+            </div>
+        </div>
+    </section>
+
+    <section>
+        <h2>3. État de la Réserve</h2>
+        <div class="reserve-grid">
+            <div class="carton">Prince : 1 carton de 24</div>
+            <div class="carton">BN Choco : 2 cartons de 12</div>
+            <div class="carton">Oreo : 1 carton de 20</div>
+            <div class="carton">Chamonix : 15 vrac</div>
+            <div class="carton">Pepito : 1 carton de 12</div>
+            <div class="carton">Autres : 0 stock</div>
+        </div>
+    </section>
+
+    <section>
+        <h2>4. Tableau d'Inventaire Complet</h2>
+        <table>
+            <thead><tr><th>Produit</th><th>Prix HT</th><th>Théo.</th><th>Rayon (x2)</th><th>Rés.</th><th>RÉEL</th><th>ÉCART</th><th>VALEUR HT</th></tr></thead>
+            <tbody>
+                <tr><td>Prince Lu</td><td>2.05 €</td><td>40</td><td><input type="number" class="input-tab"></td><td><input type="number" class="input-tab"></td><td><input type="number" class="input-tab"></td><td><input type="number" class="input-tab"></td><td><input type="number" step="0.01" class="input-tab"></td></tr>
+                <tr><td>BN Choco</td><td>1.75 €</td><td>35</td><td><input type="number" class="input-tab"></td><td><input type="number" class="input-tab"></td><td><input type="number" class="input-tab"></td><td><input type="number" class="input-tab"></td><td><input type="number" step="0.01" class="input-tab"></td></tr>
+                <tr><td>Oreo</td><td>1.60 €</td><td>32</td><td><input type="number" class="input-tab"></td><td><input type="number" class="input-tab"></td><td><input type="number" class="input-tab"></td><td><input type="number" class="input-tab"></td><td><input type="number" step="0.01" class="input-tab"></td></tr>
+                <tr><td>Granola</td><td>1.90 €</td><td>30</td><td><input type="number" class="input-tab"></td><td><input type="number" class="input-tab"></td><td><input type="number" class="input-tab"></td><td><input type="number" class="input-tab"></td><td><input type="number" step="0.01" class="input-tab"></td></tr>
+                <tr><td>Pims</td><td>1.80 €</td><td>20</td><td><input type="number" class="input-tab"></td><td><input type="number" class="input-tab"></td><td><input type="number" class="input-tab"></td><td><input type="number" class="input-tab"></td><td><input type="number" step="0.01" class="input-tab"></td></tr>
+                <tr><td>Chamonix</td><td>2.10 €</td><td>25</td><td><input type="number" class="input-tab"></td><td><input type="number" class="input-tab"></td><td><input type="number" class="input-tab"></td><td><input type="number" class="input-tab"></td><td><input type="number" step="0.01" class="input-tab"></td></tr>
+                <tr><td>Pepito</td><td>1.65 €</td><td>28</td><td><input type="number" class="input-tab"></td><td><input type="number" class="input-tab"></td><td><input type="number" class="input-tab"></td><td><input type="number" class="input-tab"></td><td><input type="number" step="0.01" class="input-tab"></td></tr>
+                <tr><td>P. Coeurs</td><td>1.70 €</td><td>15</td><td><input type="number" class="input-tab"></td><td><input type="number" class="input-tab"></td><td><input type="number" class="input-tab"></td><td><input type="number" class="input-tab"></td><td><input type="number" step="0.01" class="input-tab"></td></tr>
+                <tr><td>Palmito</td><td>1.50 €</td><td>10</td><td><input type="number" class="input-tab"></td><td><input type="number" class="input-tab"></td><td><input type="number" class="input-tab"></td><td><input type="number" class="input-tab"></td><td><input type="number" step="0.01" class="input-tab"></td></tr>
+                <tr><td>Barquette</td><td>1.40 €</td><td>25</td><td><input type="number" class="input-tab"></td><td><input type="number" class="input-tab"></td><td><input type="number" class="input-tab"></td><td><input type="number" class="input-tab"></td><td><input type="number" step="0.01" class="input-tab"></td></tr>
+            </tbody>
+            <tfoot><tr class="total-row"><td colspan="7" align="right">DÉMARQUE TOTALE HT :</td><td><input type="number" id="total-val" class="input-tab" style="width:80px"></td></tr></tfoot>
+        </table>
+        <button class="btn no-print" onclick="checkTable()">Vérifier le tableau</button> <span id="r2" class="status"></span>
+    </section>
+
+    <section style="background:#fffbe6; padding:20px; border:2px solid var(--orange); border-radius:10px; margin-top:30px;">
+        <h2>5. Cas Leclerc : Calculs Promotionnels</h2>
+        <div class="context">Monsieur Girardin, le pack de Prince Lu est actuellement en promotion avec 20% de remise , pour les dates courtes nous allons appliquer 50 ct de plus : "Calculez le prix promotionnel pour le pack Prince Lu date courte."</div>
+        <p><b>Méthode pas à pas :</b><br>
+        1. Calculer la remise (%) : Prix * %.<br>
+        2. Soustraire cette remise du prix initial.<br>
+        3. Soustraire ensuite les 0,50 € de remise immédiate.</p>
+        <p>Prince Lu : 2,80 € TTC.<br>
+        1. Appliquez -20% pour connaitre le prix promo: <input type="number" id="p1" class="input-tab"> € TTC<br>
+        2. Retirez encore -0,50 € pour connaitre le prix remisé date courte : <input type="number" id="p2" class="input-tab"> € TTC<br>
+        3. Économie totale pour le client : <input type="number" id="p3" class="input-tab"> €</p>
+        <button class="btn no-print" onclick="checkPromo()">Vérifier la promo</button> <span id="r3" class="status"></span>
+    </section>
+
+    <section style="background:#f3e5f5; padding:20px; border:2px solid var(--purple); border-radius:10px; margin-top:25px;">
+        <h2>6. ANALYSE EXPERT : Taux de Démarque</h2>
+        <div class="context">Monsieur Girardin : "Finalisons avec le taux de démarque sur un CA de 8 500 € HT."</div>
+        <p>A. Démarque Totale HT / B. CA HT (8 500 €) / C. Multipliez par 100.</p>
+        <p>Calcul : ( <input type="number" id="b-dem" class="input-tab"> / 8500 ) x 100 = <input type="number" step="0.01" id="b-taux" class="input-tab"> %</p>
+        <button class="btn no-print" style="background:var(--purple)" onclick="checkExpert()">Valider l'Analyse</button>
+        <div id="congrats" style="display:none; color:green; font-weight:bold; margin-top:10px">🌟 BRAVO ! Monsieur Girardin valide votre rapport !</div>
+    </section>
+
+    <button class="btn-print no-print" onclick="window.print()">🖨️ IMPRIMER L'ÉVALUATION</button>
+</div>
+
+<script>
+    function checkSteps() {
+        const r = document.getElementById('r1');
+        const ok = (document.getElementById('s4').value==1 && document.getElementById('s2').value==2 && document.getElementById('s1').value==3 && document.getElementById('s3').value==4 && document.getElementById('s5').value==5);
+        if(ok) { r.innerHTML = "✅ OK"; r.style.color = "green"; }
+        else { r.innerHTML = "❌ Revoir l'ordre"; r.style.color = "red"; }
+    }
+    function checkTable() {
+        const r = document.getElementById('r2');
+        const v = document.getElementById('total-val').value;
+        if(v == 160.25) { r.innerHTML = "✅ Correct"; r.style.color = "green"; }
+        else { r.innerHTML = "❌ Erreur Total"; r.style.color = "red"; }
+    }
+    function checkPromo() {
+        const r = document.getElementById('r3');
+        const ok = (document.getElementById('p1').value == 2.24 && document.getElementById('p2').value == 1.74 && document.getElementById('p3').value == 1.06);
+        if(ok) { r.innerHTML = "✅ OK"; r.style.color = "green"; }
+        else { r.innerHTML = "❌ Erreur"; r.style.color = "red"; }
+    }
+    function checkExpert() {
+        if(document.getElementById('b-dem').value == 160.25 && document.getElementById('b-taux').value >= 1.88) {
+            document.getElementById('congrats').style.display = "block";
+        } else {
+            alert("Vérifiez les montants saisis dans l'analyse.");
+        }
+    }
+</script>
+</body>
+</html>
