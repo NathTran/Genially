@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestion des clients difficiles – CAP EPC</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
+:root {
+  --blue: #1e3a5f; --red: #e8483a; --orange: #f5a623;
+  --green: #16a34a; --soft: #f0f6ff; --muted: #6b7280; --r: 14px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Nunito', Arial, sans-serif; background: var(--soft); color: #1a1a2e; }
+
+#topbar { position: fixed; top:0; left:0; right:0; z-index:100; background:#dde6f5; height:8px; }
+#prog { height:8px; background: linear-gradient(90deg,var(--orange),var(--red)); width:0; transition:width 0.4s; }
+#timer { position:fixed; top:12px; right:14px; z-index:200; background:var(--blue); color:white; font-weight:800; font-size:13px; padding:5px 13px; border-radius:20px; box-shadow:0 2px 10px rgba(0,0,0,0.25); }
+
+header { background:var(--blue); color:white; padding:36px 20px 24px; text-align:center; }
+header .tag { display:inline-block; background:var(--red); font-size:11px; font-weight:800; letter-spacing:2px; text-transform:uppercase; padding:4px 14px; border-radius:20px; margin-bottom:12px; }
+header h1 { font-size:clamp(19px,5vw,30px); font-weight:800; margin-bottom:6px; }
+header p { color:rgba(255,255,255,0.75); font-size:13.5px; }
+.dots { display:flex; gap:6px; justify-content:center; margin-top:14px; flex-wrap:wrap; }
+.dot { width:9px; height:9px; border-radius:50%; background:rgba(255,255,255,0.3); transition:all 0.3s; }
+.dot.done { background:var(--green); }
+.dot.current { background:var(--orange); transform:scale(1.5); }
+
+main { max-width:840px; margin:0 auto; padding:26px 14px 80px; display:flex; flex-direction:column; gap:22px; }
+
+.card { background:white; border-radius:var(--r); padding:22px; box-shadow:0 2px 16px rgba(0,0,0,0.07); display:none; }
+.card.show { display:block; animation:fu 0.4s ease; }
+@keyframes fu { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+
+.ch { display:flex; align-items:center; gap:11px; margin-bottom:16px; flex-wrap:wrap; }
+.num { width:32px; height:32px; border-radius:50%; flex-shrink:0; background:var(--blue); color:white; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:14px; }
+.num.ok { background:var(--green); }
+h2 { font-size:16.5px; font-weight:800; color:var(--blue); }
+.pts-badge { margin-left:auto; background:#fef3c7; color:#92400e; font-weight:800; font-size:12px; padding:3px 11px; border-radius:20px; }
+.duree { display:inline-block; background:#e0f2fe; color:#0369a1; font-size:12px; font-weight:700; padding:3px 10px; border-radius:20px; margin-bottom:12px; }
+
+/* TEXTE DE COURS */
+.lecon { background:#f8faff; border-left:4px solid var(--blue); border-radius:10px; padding:14px 16px; margin-bottom:14px; font-size:14px; line-height:1.75; }
+.lecon strong { color:var(--blue); }
+.lecon ul { margin-left:18px; margin-top:6px; }
+.lecon ul li { margin-bottom:4px; }
+
+.info-box { background:#eff6ff; border-left:4px solid #3b82f6; border-radius:10px; padding:11px 14px; font-size:13.5px; line-height:1.6; margin-bottom:12px; }
+.warn-box { background:#fff7ed; border-left:4px solid var(--orange); border-radius:10px; padding:11px 14px; font-size:13.5px; line-height:1.6; margin-bottom:12px; }
+
+.scenario { background:#fff7ed; border-left:4px solid var(--orange); border-radius:10px; padding:14px; margin-bottom:14px; font-size:14px; line-height:1.7; }
+.scenario .ico { font-size:24px; margin-bottom:6px; display:block; }
+
+/* OPTIONS QCM */
+.opts { display:flex; flex-direction:column; gap:7px; margin-top:8px; }
+.opt { padding:11px 13px; border:2px solid #e5e7eb; border-radius:10px; cursor:pointer; font-size:14px; background:white; text-align:left; font-family:'Nunito',Arial,sans-serif; transition:all 0.2s; }
+.opt:hover { border-color:var(--blue); background:var(--soft); }
+.opt.correct { border-color:var(--green)!important; background:#f0fdf4; color:#14532d; }
+.opt.wrong { border-color:var(--red)!important; background:#fff1f0; color:#7f1d1d; }
+.opt.off { pointer-events:none; }
+.opt.off:not(.correct):not(.wrong) { opacity:0.5; }
+
+.fb { display:none; margin-top:8px; padding:10px 13px; border-radius:8px; font-size:13.5px; line-height:1.55; }
+.fb.show { display:block; }
+.fb.ok { background:#f0fdf4; color:#14532d; }
+.fb.ko { background:#fff1f0; color:#7f1d1d; }
+
+/* FLIP CARDS */
+.fc { border:2px solid #e5e7eb; border-radius:12px; padding:13px; margin-bottom:9px; cursor:pointer; display:flex; gap:11px; align-items:flex-start; transition:all 0.2s; }
+.fc:hover { border-color:var(--orange); background:#fffbeb; }
+.fc.open { border-color:var(--green); background:#f0fdf4; cursor:default; }
+.fc .ico2 { font-size:24px; flex-shrink:0; }
+.fc strong { display:block; font-size:14px; font-weight:800; margin-bottom:3px; }
+.fc .dd { font-size:13.5px; color:var(--muted); line-height:1.5; }
+.fc .hint { font-size:11.5px; color:#9ca3af; font-style:italic; }
+.fc .more { display:none; margin-top:8px; padding-top:8px; border-top:1px solid #bbf7d0; font-size:13.5px; color:#166534; line-height:1.55; }
+.fc.open .more { display:block; }
+.fc.open .hint { display:none; }
+
+/* DRAG DROP */
+.dnd-wrap { display:flex; gap:10px; flex-wrap:wrap; }
+.pool,.zone { flex:1; min-width:160px; border:2px dashed #d1d5db; border-radius:12px; padding:10px; min-height:100px; }
+.zone { border-color:var(--blue); background:#f8faff; }
+.pool h4,.zone h4 { font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:1px; color:var(--muted); margin-bottom:7px; }
+.chip { background:white; border:1.5px solid #e5e7eb; border-radius:8px; padding:7px 10px; font-size:13px; cursor:grab; margin-bottom:5px; transition:all 0.2s; user-select:none; font-family:'Nunito',Arial,sans-serif; }
+.chip:hover { border-color:var(--orange); }
+.chip.ok { border-color:var(--green); background:#f0fdf4; cursor:default; }
+.chip.ko { border-color:var(--red); background:#fff1f0; cursor:default; }
+.zone.over { border-color:var(--red); background:#fff5f5; }
+
+/* ERIC */
+.ei { border:2px solid #e5e7eb; border-radius:10px; padding:11px 13px; margin-bottom:7px; display:flex; align-items:center; gap:11px; transition:border 0.2s; }
+.ei.ok { border-color:var(--green); background:#f0fdf4; }
+.ei .lt { width:32px; height:32px; background:var(--blue); color:white; border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:15px; flex-shrink:0; }
+.ei .inf strong { display:block; font-size:14px; font-weight:800; }
+.ei .inf span { font-size:13px; color:var(--muted); }
+.ei .mvb { margin-left:auto; display:flex; gap:3px; }
+.ei .mvb button { border:none; background:var(--soft); border-radius:6px; padding:4px 8px; cursor:pointer; font-size:13px; }
+.ei .mvb button:hover { background:#dbeafe; }
+
+/* TEXTAREA / INPUT */
+.field { margin-bottom:13px; }
+.field label { display:block; font-size:13px; font-weight:800; color:var(--blue); margin-bottom:4px; }
+.field textarea,.field input[type=text] { width:100%; padding:9px 12px; border:2px solid #e5e7eb; border-radius:10px; font-family:'Nunito',Arial,sans-serif; font-size:14px; transition:border 0.2s; resize:vertical; }
+.field textarea { min-height:65px; }
+.field textarea:focus,.field input:focus { outline:none; border-color:var(--blue); }
+
+/* BOUTONS */
+.btn { display:inline-flex; align-items:center; gap:6px; padding:10px 20px; border:none; border-radius:10px; font-family:'Nunito',Arial,sans-serif; font-size:14px; font-weight:800; cursor:pointer; transition:all 0.2s; }
+.btn-blue { background:var(--blue); color:white; }
+.btn-blue:hover { background:#16304f; transform:translateY(-1px); }
+.btn-red { background:var(--red); color:white; }
+.btn-red:hover { background:#c73228; }
+.btn-green { background:var(--green); color:white; }
+.btn-outline { background:white; color:var(--blue); border:2px solid var(--blue); }
+.btn-outline:hover { background:var(--soft); }
+.btn:disabled { opacity:0.4; cursor:not-allowed; transform:none!important; }
+.br { display:flex; gap:9px; flex-wrap:wrap; margin-top:16px; }
+
+/* RÉSUMÉ IMPRIMABLE */
+#resume-box { border:2px solid var(--orange); border-radius:12px; background:#fffbeb; padding:20px; font-size:14px; line-height:1.85; }
+#resume-box h3 { font-size:16px; text-align:center; margin-bottom:4px; }
+#resume-box .rsub { text-align:center; font-size:12px; color:#92400e; margin-bottom:14px; }
+#resume-box hr { border:none; border-top:2px solid var(--orange); margin-bottom:14px; }
+#resume-box .rp { margin-bottom:12px; }
+
+/* COPIER */
+#copy-zone { width:100%; padding:10px; border:2px solid #e5e7eb; border-radius:10px; font-family:'Nunito',Arial,sans-serif; font-size:13px; min-height:160px; background:#f9fafb; resize:vertical; }
+.copy-ok { display:none; background:#f0fdf4; border:2px solid var(--green); border-radius:10px; padding:12px; text-align:center; color:#14532d; font-weight:700; margin-top:10px; }
+.copy-ok.show { display:block; }
+
+/* SITUATION ANALYSE */
+.sit-grid { display:flex; flex-direction:column; gap:10px; }
+.sit-item { border:2px solid #e5e7eb; border-radius:10px; padding:13px; }
+.sit-item .sit-q { font-size:14px; font-weight:700; margin-bottom:8px; }
+.sit-item select { width:100%; padding:8px; border:2px solid #e5e7eb; border-radius:8px; font-family:'Nunito',Arial,sans-serif; font-size:13.5px; margin-bottom:6px; }
+.sit-item select:focus { outline:none; border-color:var(--blue); }
+.sit-item .sit-fb { display:none; font-size:13px; padding:8px 11px; border-radius:7px; }
+.sit-item .sit-fb.show { display:block; }
+.sit-item .sit-fb.ok { background:#f0fdf4; color:#14532d; }
+.sit-item .sit-fb.ko { background:#fff1f0; color:#7f1d1d; }
+
+/* JEU DE RÔLE */
+.roleplay-steps { display:flex; flex-direction:column; gap:10px; }
+.rp-step { border:2px solid #e5e7eb; border-radius:10px; padding:13px; }
+.rp-step label { display:block; font-size:13px; font-weight:800; color:var(--blue); margin-bottom:5px; }
+.rp-step textarea { width:100%; padding:9px; border:2px solid #e5e7eb; border-radius:8px; font-family:'Nunito',Arial,sans-serif; font-size:13.5px; resize:vertical; min-height:55px; }
+.rp-step textarea:focus { outline:none; border-color:var(--blue); }
+.rp-tag { display:inline-block; font-size:11px; font-weight:800; padding:2px 9px; border-radius:20px; margin-bottom:6px; }
+.rp-E { background:#dbeafe; color:#1e40af; }
+.rp-R { background:#fce7f3; color:#9d174d; }
+.rp-I { background:#d1fae5; color:#065f46; }
+.rp-C { background:#fef3c7; color:#92400e; }
+
+@media print {
+  * { -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; }
+  #topbar,#timer,header .tag,.dots,.br,.btn,.opts,.dnd-wrap,.ei .mvb,
+  .duree,.hint,#section-dnd,#section-eric,#section-desc,#section-quiz,#section-analyse,
+  #section-roleplay,#section-intro,#section-types,#section-trous,
+  .info-box,.warn-box { display:none!important; }
+  body { background:white!important; }
+  main { padding:0!important; gap:12px!important; }
+  header { padding:14px!important; }
+  header h1 { font-size:18px!important; }
+  header p { color:#555!important; }
+  .card { display:block!important; box-shadow:none!important; border:1px solid #ddd!important; padding:14px!important; page-break-inside:avoid; }
+  #section-cours,.lecon,#section-resume { display:block!important; }
+  #resume-box { border:1.5px solid #ccc!important; background:white!important; }
+}
+</style>
+</head>
+<body>
+<div id="topbar"><div id="prog"></div></div>
+<div id="timer">⏱ 00:00</div>
+
+<header>
+  <div class="tag">CAP EPC – Équipier Polyvalent du Commerce</div>
+  <h1>Comment gérer un client difficile ? 🛒</h1>
+  <p>Fais les activités dans l'ordre — construis ton cours au fil des exercices !</p>
+  <div class="dots" id="dots"></div>
+</header>
+
+<main>
+
+<!-- ===== 1. DÉCLENCHEUR ===== -->
+<div class="card show" id="section-intro">
+  <div class="ch"><div class="num" id="n0">1</div><h2>Pour commencer — une situation réelle</h2><span class="pts-badge" id="pts">⭐ 0 pt</span></div>
+  <span class="duree">⏱ ~10 min</span>
+
+  <div class="scenario">
+    <span class="ico">🛒</span>
+    <strong>Situation :</strong> Tu travailles en caisse dans une grande surface. Un monsieur arrive en tenant une baguette. Il parle fort :<br><br>
+    <em>— "Ça fait deux fois que votre pain est rassis le lendemain ! C'est un scandale ! Je veux être remboursé ET je veux voir le responsable !"</em><br><br>
+    D'autres clients font la queue derrière lui. Tout le monde regarde.
+  </div>
+
+  <p style="font-size:14.5px;font-weight:700;margin-bottom:10px;">1. Quelle est ta première réaction instinctive ?</p>
+  <div class="opts" id="opts-i1">
+    <button class="opt" onclick="pick('i1',this,0)">😤 Tu lui expliques que le pain artisanal rassit vite, c'est normal</button>
+    <button class="opt" onclick="pick('i1',this,1)">😊 Tu l'écoutes jusqu'au bout sans l'interrompre</button>
+    <button class="opt" onclick="pick('i1',this,2)">🤷 Tu lui demandes de repasser plus tard</button>
+    <button class="opt" onclick="pick('i1',this,3)">😶 Tu appelles ton responsable sans rien dire</button>
+  </div>
+  <div class="fb" id="fb-i1"></div>
+
+  <p style="font-size:14.5px;font-weight:700;margin:16px 0 10px;">2. Qu'est-ce qui te semble le plus difficile dans cette situation ? (plusieurs réponses possibles)</p>
+  <div id="checks" style="display:flex;flex-direction:column;gap:7px;font-size:14px;">
+    <label><input type="checkbox"> Garder son calme face à quelqu'un qui crie</label>
+    <label><input type="checkbox"> Ne pas se justifier ou se défendre</label>
+    <label><input type="checkbox"> Trouver une solution satisfaisante pour tout le monde</label>
+    <label><input type="checkbox"> Gérer les autres clients qui attendent</label>
+    <label><input type="checkbox"> Ne pas prendre ça personnellement</label>
+  </div>
+
+  <div class="field" style="margin-top:14px;">
+    <label>3. Selon toi, pourquoi certains clients deviennent-ils difficiles ? (écris 2-3 idées)</label>
+    <textarea id="q-pourquoi" placeholder="Exemple : parce qu'ils sont déçus, parce qu'ils ont eu un problème..."></textarea>
+  </div>
+
+  <div class="br"><button class="btn btn-blue" id="btn-intro" onclick="goTo('types')">Voir le cours →</button></div>
+</div>
+
+<!-- ===== 2. TYPES ===== -->
+<div class="card" id="section-types">
+  <div class="ch"><div class="num" id="n1">2</div><h2>Les 4 types de clients difficiles</h2></div>
+  <span class="duree">⏱ ~15 min</span>
+
+  <div class="lecon">
+    <strong>📖 À lire avant de commencer :</strong><br><br>
+    Dans un commerce, tu vas croiser différents types de clients difficiles. Chacun a un comportement différent et demande une réaction adaptée. Il est important de <strong>reconnaître le type de client</strong> pour choisir la bonne stratégie.<br><br>
+    Un client difficile n'est pas forcément un "mauvais" client. Souvent, il est simplement <strong>stressé, déçu ou pressé</strong>. Ton rôle est de l'aider à retrouver confiance dans le magasin.
+  </div>
+
+  <div class="info-box">💡 <strong>Clique sur chaque carte</strong> pour découvrir comment reconnaître et gérer chaque type.</div>
+
+  <div class="fc" id="fc0" onclick="openFc(0)">
+    <span class="ico2">😡</span>
+    <div><strong>Le client agressif / colérique</strong>
+    <div class="dd">Il élève la voix, utilise des mots forts. Il semble en colère contre toi.</div>
+    <div class="hint">👆 Clique pour voir comment réagir</div>
+    <div class="more">✅ <strong>Comment réagir :</strong><br>• Tu gardes la voix calme et basse (ne jamais répondre sur le même ton)<br>• Tu laisses le client finir de parler SANS l'interrompre<br>• Tu dis : <em>"Je vous entends, je comprends que c'est frustrant"</em><br>• ⚠️ Il n'est pas en colère contre toi personnellement, mais contre la situation</div>
+    </div>
+  </div>
+
+  <div class="fc" id="fc1" onclick="openFc(1)">
+    <span class="ico2">😤</span>
+    <div><strong>Le client insatisfait</strong>
+    <div class="dd">Il est déçu d'un produit ou d'un service. Ce qu'il a reçu ne correspond pas à ses attentes.</div>
+    <div class="hint">👆 Clique pour voir comment réagir</div>
+    <div class="more">✅ <strong>Comment réagir :</strong><br>• Reconnaître sa déception : <em>"Je comprends que ce n'est pas acceptable"</em><br>• Ne jamais minimiser : évite <em>"C'est pas si grave"</em><br>• Proposer une solution concrète : remboursement, échange, geste commercial<br>• Vérifier en fin qu'il repart satisfait</div>
+    </div>
+  </div>
+
+  <div class="fc" id="fc2" onclick="openFc(2)">
+    <span class="ico2">🗣️</span>
+    <div><strong>Le client bavard</strong>
+    <div class="dd">Il parle énormément, s'éloigne du sujet, prend beaucoup de temps. D'autres clients attendent.</div>
+    <div class="hint">👆 Clique pour voir comment réagir</div>
+    <div class="more">✅ <strong>Comment réagir :</strong><br>• L'écouter quelques instants pour qu'il se sente respecté<br>• Recentrer poliment : <em>"Donc si je résume, vous souhaitez… ?"</em><br>• Poser des questions courtes et fermées (réponse oui/non)<br>• Rester souriant mais concis</div>
+    </div>
+  </div>
+
+  <div class="fc" id="fc3" onclick="openFc(3)">
+    <span class="ico2">🤔</span>
+    <div><strong>Le client indécis</strong>
+    <div class="dd">Il hésite longtemps, revient sur ses choix, a besoin d'être rassuré. Il ne sait pas ce qu'il veut.</div>
+    <div class="hint">👆 Clique pour voir comment réagir</div>
+    <div class="more">✅ <strong>Comment réagir :</strong><br>• Ne pas lui proposer trop de choix à la fois<br>• Le guider avec une recommandation simple : <em>"Beaucoup de clients choisissent celui-ci"</em><br>• Être rassurant : <em>"C'est un bon choix, vous ne serez pas déçu(e)"</em><br>• Ne pas le brusquer ni montrer ton impatience</div>
+    </div>
+  </div>
+
+  <div id="fc-count" style="font-size:13px;color:var(--muted);margin-top:6px;">0 / 4 types découverts</div>
+
+  <div class="field" style="margin-top:14px;">
+    <label>✏️ Dans la situation du début (le monsieur avec le pain), quel type de client est-il ? Pourquoi ?</label>
+    <textarea id="q-type" placeholder="C'est un client... parce que..."></textarea>
+  </div>
+
+  <div class="br"><button class="btn btn-blue" id="btn-types" onclick="goTo('dnd')">Activité suivante →</button></div>
+</div>
+
+<!-- ===== 3. DRAG DROP ===== -->
+<div class="card" id="section-dnd">
+  <div class="ch"><div class="num" id="n2">3</div><h2>Bon réflexe ou erreur à éviter ?</h2></div>
+  <span class="duree">⏱ ~10 min</span>
+
+  <div class="warn-box">⚠️ Certains comportements semblent naturels mais <strong>aggravent la situation</strong>. D'autres sont parfois difficiles mais <strong>désamorcent la tension</strong>. À toi de les classer !</div>
+
+  <div class="dnd-wrap">
+    <div class="pool" id="pool"><h4>🃏 À classer</h4></div>
+    <div class="zone" id="zone-bon" ondragover="dOver(event)" ondrop="dDrop(event,'bon')"><h4>✅ Bon réflexe</h4></div>
+    <div class="zone" id="zone-mal" ondragover="dOver(event)" ondrop="dDrop(event,'mal')"><h4>❌ À éviter</h4></div>
+  </div>
+  <div id="dnd-score" style="font-size:13.5px;font-weight:700;color:var(--muted);margin-top:9px;"></div>
+
+  <div class="field" style="margin-top:14px;">
+    <label>✏️ Parmi les erreurs à éviter, laquelle penses-tu être la plus fréquente chez les vendeurs débutants ? Pourquoi ?</label>
+    <textarea id="q-dnd" placeholder="Je pense que..."></textarea>
+  </div>
+
+  <div class="br">
+    <button class="btn btn-outline" onclick="resetDnd()">↺ Recommencer</button>
+    <button class="btn btn-blue" id="btn-dnd" onclick="goTo('eric')">Continuer →</button>
+  </div>
+</div>
+
+<!-- ===== 4. ERIC ===== -->
+<div class="card" id="section-eric">
+  <div class="ch"><div class="num" id="n3">4</div><h2>La méthode E.R.I.C. 🔑</h2></div>
+  <span class="duree">⏱ ~15 min</span>
+
+  <div class="lecon">
+    <strong>📖 La méthode E.R.I.C. :</strong><br><br>
+    Dans un commerce, les professionnels utilisent la méthode <strong>E.R.I.C.</strong> pour gérer les situations difficiles. C'est une suite logique de 4 actions à réaliser dans le bon ordre.<br><br>
+    <strong>Attention :</strong> sauter une étape peut aggraver la situation. Par exemple, si tu proposes une solution AVANT d'avoir bien écouté le client, il aura l'impression que tu ne l'as pas compris.
+  </div>
+
+  <div class="info-box">🔀 <strong>Remets les 4 étapes dans le bon ordre</strong> en utilisant les flèches ↑ ↓, puis clique sur "Vérifier".</div>
+
+  <div id="eric-list"></div>
+  <div id="eric-fb" style="font-size:13.5px;font-weight:700;margin-top:8px;"></div>
+
+  <div class="field" style="margin-top:14px;">
+    <label>✏️ Selon toi, quelle est l'étape la plus difficile à faire en vrai ? Pourquoi ?</label>
+    <textarea id="q-eric" placeholder="Je pense que l'étape la plus difficile est... parce que..."></textarea>
+  </div>
+
+  <div class="br">
+    <button class="btn btn-outline" onclick="shuffleEric()">↺ Mélanger</button>
+    <button class="btn btn-red" onclick="checkEric()">Vérifier ✓</button>
+    <button class="btn btn-blue" id="btn-eric" onclick="goTo('desc')">Continuer →</button>
+  </div>
+</div>
+
+<!-- ===== 5. DESC ===== -->
+<div class="card" id="section-desc">
+  <div class="ch"><div class="num" id="n4">5</div><h2>La méthode D.E.S.C. 🗣️</h2></div>
+  <span class="duree">⏱ ~12 min</span>
+
+  <div class="lecon">
+    <strong>📖 À quoi sert la méthode D.E.S.C. ?</strong><br><br>
+    La méthode E.R.I.C. t'aide à <strong>gérer un client qui se plaint</strong>. La méthode <strong>D.E.S.C.</strong> est différente : elle sert à <strong>exprimer un désaccord ou recadrer une situation</strong> sans agresser le client.<br><br>
+    Tu l'utilises quand le client dépasse les limites (insultes, comportement irrespectueux) ou quand tu dois lui annoncer quelque chose de difficile (refus, règle du magasin...).<br><br>
+    <strong>D</strong> – <em>Décrire</em> : Je décris les faits objectivement, sans juger<br>
+    <strong>E</strong> – <em>Exprimer</em> : J'exprime ce que je ressens ou ce que ça crée comme problème<br>
+    <strong>S</strong> – <em>Suggérer</em> : Je propose une solution ou une alternative<br>
+    <strong>C</strong> – <em>Conclure</em> : Je conclus de façon positive pour avancer
+  </div>
+
+  <div class="info-box">📌 <strong>Exemple concret :</strong><br>
+  Un client dit en caisse : <em>"Vous êtes vraiment incompétents dans ce magasin !"</em><br><br>
+  <strong>D –</strong> <em>"Je constate que vous êtes en colère et que vous avez utilisé le mot incompétent."</em><br>
+  <strong>E –</strong> <em>"Ce type de mot est difficile à entendre pour moi et pour mon équipe."</em><br>
+  <strong>S –</strong> <em>"Je vous propose qu'on règle votre problème calmement ensemble."</em><br>
+  <strong>C –</strong> <em>"De cette façon, je pourrai vous aider au mieux. Qu'est-ce qui s'est passé exactement ?"</em>
+  </div>
+
+  <p style="font-size:14px;font-weight:700;margin-bottom:10px;">Quiz D.E.S.C. — À quelle lettre correspond chaque action ?</p>
+  <div id="desc-quiz"></div>
+  <div id="desc-fb" style="font-size:13.5px;font-weight:700;margin-top:8px;"></div>
+
+  <div class="field" style="margin-top:16px;">
+    <label>✏️ Selon toi, quelle est la différence principale entre E.R.I.C. et D.E.S.C. ? (en tes propres mots)</label>
+    <textarea id="q-desc" placeholder="E.R.I.C. sert à... alors que D.E.S.C. sert à..."></textarea>
+  </div>
+
+  <div class="field">
+    <label>✏️ Dans quelle situation utiliserais-tu plutôt D.E.S.C. qu'E.R.I.C. ? Donne un exemple.</label>
+    <textarea id="q-desc2" placeholder="J'utiliserais D.E.S.C. si..."></textarea>
+  </div>
+
+  <div class="br">
+    <button class="btn btn-blue" id="btn-desc" onclick="goTo('analyse')">Activité suivante →</button>
+  </div>
+</div>
+
+<!-- ===== 5. SITUATIONS À ANALYSER ===== -->
+<div class="card" id="section-analyse">
+  <div class="ch"><div class="num" id="n5">6</div><h2>Analyse de situations 🔍</h2></div>
+  <span class="duree">⏱ ~15 min</span>
+
+  <div class="info-box">📋 Pour chaque situation, identifie le type de client et la bonne réaction.</div>
+
+  <div class="sit-grid">
+
+    <div class="sit-item">
+      <div class="sit-q">📍 <strong>Situation 1 :</strong> Une dame fait le tour du rayon fromages depuis 10 minutes. Elle te demande de lui conseiller un fromage, puis change d'avis 3 fois. Elle redemande ton avis et hésite encore.</div>
+      <label style="font-size:13px;font-weight:700;">Quel type de client ?</label>
+      <select onchange="checkSit(this,0)">
+        <option value="">— Choisir —</option>
+        <option value="0">Client agressif</option>
+        <option value="1">Client insatisfait</option>
+        <option value="2">Client bavard</option>
+        <option value="3">Client indécis</option>
+      </select>
+      <label style="font-size:13px;font-weight:700;">Quelle est la meilleure réaction ?</label>
+      <select onchange="checkSit2(this,0)">
+        <option value="">— Choisir —</option>
+        <option value="0">La laisser choisir seule, tu as d'autres clients</option>
+        <option value="1">Lui recommander un seul fromage en la rassurant</option>
+        <option value="2">Lui proposer les 10 fromages du rayon</option>
+        <option value="3">Lui dire que tu ne connais pas les fromages</option>
+      </select>
+      <div class="sit-fb" id="sfb0"></div>
+    </div>
+
+    <div class="sit-item">
+      <div class="sit-q">📍 <strong>Situation 2 :</strong> Un homme arrive à la caisse. Il dit qu'il a été mal renseigné par un collègue sur le prix d'un produit. Il ne crie pas mais dit calmement qu'il est très déçu et qu'il ne reviendra peut-être plus.</div>
+      <label style="font-size:13px;font-weight:700;">Quel type de client ?</label>
+      <select onchange="checkSit(this,1)">
+        <option value="">— Choisir —</option>
+        <option value="0">Client agressif</option>
+        <option value="1">Client insatisfait</option>
+        <option value="2">Client bavard</option>
+        <option value="3">Client indécis</option>
+      </select>
+      <label style="font-size:13px;font-weight:700;">Quelle est la meilleure réaction ?</label>
+      <select onchange="checkSit2(this,1)">
+        <option value="">— Choisir —</option>
+        <option value="0">Lui dire que ce n'est pas ta faute</option>
+        <option value="1">Reconnaître l'erreur, s'excuser et proposer une solution</option>
+        <option value="2">Lui conseiller d'aller se plaindre à la direction</option>
+        <option value="3">Ignorer et passer au client suivant</option>
+      </select>
+      <div class="sit-fb" id="sfb1"></div>
+    </div>
+
+    <div class="sit-item">
+      <div class="sit-q">📍 <strong>Situation 3 :</strong> Une cliente crie dans le rayon car son coupon de réduction n'a pas été pris en compte en caisse. Elle frappe le comptoir avec sa main. D'autres clients s'arrêtent pour regarder.</div>
+      <label style="font-size:13px;font-weight:700;">Quel type de client ?</label>
+      <select onchange="checkSit(this,2)">
+        <option value="">— Choisir —</option>
+        <option value="0">Client agressif</option>
+        <option value="1">Client insatisfait</option>
+        <option value="2">Client bavard</option>
+        <option value="3">Client indécis</option>
+      </select>
+      <label style="font-size:13px;font-weight:700;">Quelle est la meilleure réaction ?</label>
+      <select onchange="checkSit2(this,2)">
+        <option value="">— Choisir —</option>
+        <option value="0">Crier plus fort pour qu'elle se calme</option>
+        <option value="1">Partir chercher quelqu'un d'autre sans rien dire</option>
+        <option value="2">Garder la voix calme, l'écouter, proposer de régler le problème en écart</option>
+        <option value="3">Lui demander de revenir demain</option>
+      </select>
+      <div class="sit-fb" id="sfb2"></div>
+    </div>
+
+    <div class="sit-item">
+      <div class="sit-q">📍 <strong>Situation 4 :</strong> Un client te raconte l'intégralité de son week-end avant de te poser sa question. Il parle pendant 5 minutes de sujets qui n'ont rien à voir avec le magasin.</div>
+      <label style="font-size:13px;font-weight:700;">Quel type de client ?</label>
+      <select onchange="checkSit(this,3)">
+        <option value="">— Choisir —</option>
+        <option value="0">Client agressif</option>
+        <option value="1">Client insatisfait</option>
+        <option value="2">Client bavard</option>
+        <option value="3">Client indécis</option>
+      </select>
+      <label style="font-size:13px;font-weight:700;">Quelle est la meilleure réaction ?</label>
+      <select onchange="checkSit2(this,3)">
+        <option value="">— Choisir —</option>
+        <option value="0">L'interrompre brutalement</option>
+        <option value="1">L'écouter poliment puis recentrer avec une question précise</option>
+        <option value="2">T'en aller sans rien dire</option>
+        <option value="3">L'écouter jusqu'au bout même si ça dure 20 minutes</option>
+      </select>
+      <div class="sit-fb" id="sfb3"></div>
+    </div>
+
+  </div>
+
+  <div id="analyse-score" style="font-size:13.5px;font-weight:700;color:var(--muted);margin-top:10px;"></div>
+  <div class="br"><button class="btn btn-blue" id="btn-analyse" onclick="goTo('quiz')">Quiz final →</button></div>
+</div>
+
+<!-- ===== 6. QUIZ ===== -->
+<div class="card" id="section-quiz">
+  <div class="ch"><div class="num" id="n6">7</div><h2>Quiz — Vérifie ce que tu as compris 🧠</h2></div>
+  <span class="duree">⏱ ~10 min</span>
+  <div id="quiz-body"></div>
+  <div class="br"><button class="btn btn-blue" id="btn-quiz" onclick="goTo('roleplay')">Jeu de rôle écrit →</button></div>
+</div>
+
+<!-- ===== 7. JEU DE RÔLE ÉCRIT ===== -->
+<div class="card" id="section-roleplay">
+  <div class="ch"><div class="num" id="n7">8</div><h2>Jeu de rôle écrit ✍️</h2></div>
+  <span class="duree">⏱ ~10 min</span>
+
+  <div class="scenario">
+    <span class="ico">🎭</span>
+    <strong>La situation :</strong> Tu travailles au rayon boucherie. Une cliente arrive, visiblement énervée. Elle dit :<br><br>
+    <em>"J'ai acheté ce poulet hier, il sentait mauvais ce matin ! Je l'ai jeté ! C'est inadmissible, je veux être remboursée ET une compensation !"</em>
+  </div>
+
+  <div class="info-box">✏️ Rédige exactement ce que tu ferais et ce que tu dirais, étape par étape selon la méthode E.R.I.C.</div>
+
+  <div class="roleplay-steps">
+    <div class="rp-step">
+      <span class="rp-tag rp-E">E – Écouter</span>
+      <label>Que fais-tu pendant qu'elle parle ? Qu'est-ce que tu évites de faire ?</label>
+      <textarea id="rp-e" placeholder="Je l'écoute sans l'interrompre... Je fais attention à..."></textarea>
+    </div>
+    <div class="rp-step">
+      <span class="rp-tag rp-R">R – Reformuler</span>
+      <label>Quelle phrase dis-tu pour reformuler ce qu'elle a dit ?</label>
+      <textarea id="rp-r" placeholder="Si je comprends bien, vous avez acheté... et vous souhaitez..."></textarea>
+    </div>
+    <div class="rp-step">
+      <span class="rp-tag rp-I">I – Identifier</span>
+      <label>Quelle question poses-tu pour mieux comprendre ce dont elle a besoin ?</label>
+      <textarea id="rp-i" placeholder="Pour vous aider au mieux, est-ce que vous avez... ?"></textarea>
+    </div>
+    <div class="rp-step">
+      <span class="rp-tag rp-C">C – Conclure</span>
+      <label>Quelle solution proposes-tu ? Comment termines-tu la conversation ?</label>
+      <textarea id="rp-c" placeholder="Je vais vous proposer... Est-ce que cette solution vous convient ?"></textarea>
+    </div>
+    <div class="rp-step">
+      <label>🌡️ Comment tu te sens après cette situation ? Qu'est-ce qui t'a semblé difficile ?</label>
+      <textarea id="rp-ressenti" placeholder="Après cette situation, je me sens... Ce que j'ai trouvé difficile c'est..."></textarea>
+    </div>
+  </div>
+
+  <div class="br"><button class="btn btn-blue" onclick="goTo('cours')">Construire mon cours →</button></div>
+</div>
+
+<!-- ===== 8. COURS ===== -->
+<div class="card" id="section-cours">
+  <div class="ch"><div class="num" id="n8">9</div><h2>Mon cours — Je construis ma fiche 📝</h2></div>
+  <span class="duree">⏱ ~10 min</span>
+
+  <div class="info-box">✏️ Complète avec tes propres mots. Cette fiche sera imprimée — c'est <strong>ton cours personnel</strong> !</div>
+
+  <div class="lecon">
+    <strong>Rappel du cours :</strong> Tu viens de découvrir les 4 types de clients difficiles, la méthode E.R.I.C., et comment réagir dans différentes situations. Maintenant, écris ce que toi tu as retenu.
+  </div>
+
+  <div class="field"><label>👤 Ton prénom et ton nom :</label><input type="text" id="f-prenom" placeholder="Prénom Nom"></div>
+  <div class="field"><label>📌 Un client difficile, c'est quoi pour toi ? (ta définition en 1-2 phrases)</label><textarea id="f1" placeholder="Un client difficile est..."></textarea></div>
+  <div class="field"><label>🧩 Les 4 types de clients difficiles (nom + une phrase par type) :</label><textarea id="f2" style="min-height:100px;" placeholder="1. Le client agressif : ...&#10;2. Le client insatisfait : ...&#10;3. Le client bavard : ...&#10;4. Le client indécis : ..."></textarea></div>
+  <div class="field"><label>🔑 La méthode E.R.I.C. — les 4 étapes :</label><textarea id="f3" placeholder="E = Écouter : ...&#10;R = Reformuler : ...&#10;I = Identifier : ...&#10;C = Conclure : ..."></textarea></div>
+  <div class="field"><label>⚠️ Les 3 erreurs à ne JAMAIS faire face à un client difficile :</label><textarea id="f4" placeholder="1. Ne jamais...&#10;2. Ne jamais...&#10;3. Ne jamais..."></textarea></div>
+  <div class="field"><label>🔵 La méthode D.E.S.C. — les 4 étapes (en tes mots) :</label><textarea id="f6" placeholder="D = Décrire : ...&#10;E = Exprimer : ...&#10;S = Suggérer : ...&#10;C = Conclure : ..."></textarea></div>
+  <div class="field"><label>💡 Ce que j'ai appris aujourd'hui que je ne savais pas avant :</label><textarea id="f5" placeholder="Avant cette séance, je pensais que... Maintenant je sais que..."></textarea></div>
+
+  <div class="br"><button class="btn btn-blue" onclick="goTo('trous')">Texte à trous →</button></div>
+</div>
+
+<!-- ===== 10. TEXTE À TROUS ===== -->
+<div class="card" id="section-trous">
+  <div class="ch"><div class="num" id="n9">10</div><h2>Texte à trous — Bilan de la séance 📋</h2></div>
+  <span class="duree">⏱ ~8 min</span>
+
+  <div class="info-box">✏️ Complète les trous pour vérifier que tu as bien retenu l'essentiel. Ce texte sera imprimé avec ton cours.</div>
+
+  <div id="trous-container" style="line-height:2.2;font-size:14.5px;"></div>
+
+  <div class="br">
+    <button class="btn btn-red" onclick="checkTrous()">Vérifier mes réponses ✓</button>
+    <button class="btn btn-outline" onclick="resetTrous()">↺ Recommencer</button>
+    <button class="btn btn-blue" id="btn-trous" onclick="goTo('resume')">Voir mon cours résumé →</button>
+  </div>
+</div>
+
+<!-- ===== 11. RÉSUMÉ PDF ===== -->
+<div class="card" id="section-resume">
+  <div class="ch"><div class="num" id="n10">11</div><h2>Mon cours — À imprimer 🖨️</h2></div>
+  <span class="duree">⏱ ~5 min</span>
+
+  <div class="info-box">📄 Clique sur <strong>"Imprimer"</strong>, puis sélectionne <strong>"Enregistrer en PDF"</strong> comme destination d'impression.</div>
+
+  <div id="resume-box">
+    <h3>📚 Gestion des clients difficiles</h3>
+    <div class="rsub">CAP EPC &nbsp;|&nbsp; <span id="r-prenom"></span> &nbsp;|&nbsp; <span id="r-date"></span> &nbsp;|&nbsp; Score : <span id="r-score"></span></div>
+    <hr>
+    <div class="rp"><strong>📌 Définition :</strong><br><span id="r1" style="color:#374151;"></span></div>
+    <div class="rp"><strong>🧩 Les 4 types de clients difficiles :</strong><br><span id="r2" style="color:#374151;white-space:pre-wrap;"></span></div>
+    <div class="rp"><strong>🔑 La méthode E.R.I.C. :</strong><br><span id="r3" style="color:#374151;white-space:pre-wrap;"></span></div>
+    <div class="rp"><strong>🔵 La méthode D.E.S.C. :</strong><br><span id="r6" style="color:#374151;white-space:pre-wrap;"></span></div>
+    <div class="rp"><strong>⚠️ Les 3 erreurs à ne jamais faire :</strong><br><span id="r4" style="color:#374151;white-space:pre-wrap;"></span></div>
+    <div class="rp"><strong>📋 Mon bilan (texte à trous complété) :</strong><br><span id="r-trous" style="color:#374151;white-space:pre-wrap;font-size:13px;"></span></div>
+    <div class="rp"><strong>💡 Ce que j'ai appris aujourd'hui :</strong><br><span id="r5" style="color:#374151;"></span></div>
+  </div>
+
+  <div class="br">
+    <button class="btn btn-red" onclick="doPrint()">🖨️ Imprimer / Enregistrer en PDF</button>
+  </div>
+</div>
+
+
+</main>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+// TIMER
+// TIMER
+let timerSecs = 0;
+setInterval(function() {
+  timerSecs++;
+  var mm = String(Math.floor(timerSecs / 60)).padStart(2, '0');
+  var ss = String(timerSecs % 60).padStart(2, '0');
+  document.getElementById('timer').textContent = '⏱ ' + mm + ':' + ss;
+}, 1000);
+
+// SCORE
+let score = 0;
+function addPts(n) {
+  score += n;
+  document.getElementById('pts').textContent = '⭐ ' + score + ' pt' + (score > 1 ? 's' : '');
+}
+
+// SECTIONS
+const ALL_SECTIONS = ['intro','types','dnd','eric','desc','analyse','quiz','roleplay','cours','trous','resume'];
+let curIdx = 0;
+
+// Build dots
+const dotsEl = document.getElementById('dots');
+ALL_SECTIONS.forEach(function(_, i) {
+  var d = document.createElement('div');
+  d.className = 'dot' + (i === 0 ? ' current' : '');
+  d.id = 'dot' + i;
+  dotsEl.appendChild(d);
+});
+
+function goTo(name) {
+  // Mark previous num done
+  var prevNum = document.getElementById('n' + curIdx);
+  if (prevNum) prevNum.classList.add('ok');
+
+  var nextIdx = ALL_SECTIONS.indexOf(name);
+  if (nextIdx === -1) return;
+  curIdx = nextIdx;
+
+  // Update progress bar
+  document.getElementById('prog').style.width = (curIdx / (ALL_SECTIONS.length - 1) * 100) + '%';
+
+  // Update dots
+  ALL_SECTIONS.forEach(function(_, i) {
+    var dot = document.getElementById('dot' + i);
+    if (!dot) return;
+    dot.classList.remove('done', 'current');
+    if (i < curIdx) dot.classList.add('done');
+    else if (i === curIdx) dot.classList.add('current');
+  });
+
+  // Show target section (don't hide others — they stay visible as history)
+  var target = document.getElementById('section-' + name);
+  if (target) {
+    target.classList.add('show');
+    setTimeout(function() {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
+  }
+
+  // Init section-specific logic
+  if (name === 'dnd') initDnd();
+  if (name === 'eric') initEric();
+  if (name === 'desc') initDesc();
+  if (name === 'quiz') initQuiz();
+  if (name === 'trous') initTrous();
+  if (name === 'resume') fillResume();
+}
+
+// ===== 1. INTRO =====
+function pick(id,btn,val){
+  const configs={
+    'i1':{ok:1,okMsg:'✅ Exactement ! Écouter sans interrompre, c\'est toujours la première étape.',koMsg:'💡 La meilleure réaction est d\'écouter jusqu\'au bout. On verra pourquoi dans le cours !',pts:10}
+  };
+  const cfg=configs[id];
+  const parent=document.getElementById('opts-'+id);
+  parent.querySelectorAll('.opt').forEach(b=>b.classList.add('off'));
+  const fb=document.getElementById('fb-'+id);
+  fb.classList.add('show');
+  if(val===cfg.ok){btn.classList.add('correct');fb.classList.add('ok');fb.innerHTML=cfg.okMsg;addPts(cfg.pts);}
+  else{btn.classList.add('wrong');parent.querySelectorAll('.opt')[cfg.ok].classList.add('correct');fb.classList.add('ko');fb.innerHTML=cfg.koMsg;}
+}
+
+// ===== 2. TYPES =====
+let fcOpen=0;
+function openFc(i){
+  const card=document.getElementById('fc'+i);
+  if(card.classList.contains('open'))return;
+  card.classList.add('open');
+  fcOpen++;addPts(5);
+  document.getElementById('fc-count').textContent=fcOpen+' / 4 types découverts';
+  if(fcOpen>=4){document.getElementById('fc-count').textContent='🎉 Tous les types découverts !';addPts(10);}
+}
+
+// ===== 3. DRAG DROP =====
+const chips=[
+  {t:'Écouter sans interrompre',c:'bon'},{t:'Parler plus fort que le client',c:'mal'},
+  {t:'S\'excuser sincèrement',c:'bon'},{t:'Dire "C\'est pas ma faute"',c:'mal'},
+  {t:'Proposer une solution concrète',c:'bon'},{t:'Tourner le dos et partir',c:'mal'},
+  {t:'Reformuler la demande',c:'bon'},{t:'Contredire le client en public',c:'mal'},
+  {t:'Garder un ton calme et posé',c:'bon'},{t:'Minimiser le problème du client',c:'mal'},
+];
+let placed={};
+function initDnd(){
+  const pool=document.getElementById('pool');
+  pool.innerHTML='<h4>🃏 À classer</h4>';
+  document.getElementById('zone-bon').innerHTML='<h4>✅ Bon réflexe</h4>';
+  document.getElementById('zone-mal').innerHTML='<h4>❌ À éviter</h4>';
+  placed={};document.getElementById('dnd-score').textContent='';
+  [...chips].sort(()=>Math.random()-.5).forEach(item=>{
+    const el=document.createElement('div');
+    el.className='chip';el.draggable=true;el.textContent=item.t;el.dataset.c=item.c;
+    el.addEventListener('dragstart',e=>{e.dataTransfer.setData('text/plain',JSON.stringify({t:item.t,c:item.c}));el.classList.add('dragging');});
+    el.addEventListener('dragend',()=>el.classList.remove('dragging'));
+    pool.appendChild(el);
+  });
+}
+function dOver(e){e.preventDefault();e.currentTarget.classList.add('over');}
+function dDrop(e,zone){
+  e.preventDefault();e.currentTarget.classList.remove('over');
+  let data;try{data=JSON.parse(e.dataTransfer.getData('text/plain'));}catch(err){return;}
+  document.querySelectorAll('#pool .chip').forEach(c=>{if(c.textContent===data.t)c.remove();});
+  const ok=data.c===zone;
+  const el=document.createElement('div');
+  el.className='chip '+(ok?'ok':'ko');
+  el.textContent=data.t+(ok?' ✅':' ❌');
+  e.currentTarget.appendChild(el);
+  placed[data.t]=ok;
+  const total=Object.keys(placed).length;
+  const good=Object.values(placed).filter(Boolean).length;
+  document.getElementById('dnd-score').textContent=good+' bonne(s) réponse(s) sur '+total+' / '+chips.length;
+  if(total===chips.length){addPts(good*2);}
+}
+function resetDnd(){initDnd();}
+
+// ===== 4. ERIC =====
+const ericData=[
+  {l:'E',t:'Écouter',d:'Je laisse le client parler jusqu\'au bout, sans l\'interrompre.'},
+  {l:'R',t:'Reformuler',d:'Je répète ce qu\'il a dit pour lui montrer que j\'ai bien compris.'},
+  {l:'I',t:'Identifier',d:'Je comprends exactement ce qu\'il veut ou ce qui pose problème.'},
+  {l:'C',t:'Conclure',d:'Je propose une solution et je vérifie qu\'il est satisfait.'},
+];
+function initEric(){shuffleEric();}
+function shuffleEric(){
+  const list=document.getElementById('eric-list');
+  list.innerHTML='';document.getElementById('eric-fb').textContent='';
+  [...ericData].sort(()=>Math.random()-.5).forEach(step=>{
+    const el=document.createElement('div');el.className='ei';el.dataset.l=step.l;
+    el.innerHTML=`<div class="lt">${step.l}</div><div class="inf"><strong>${step.t}</strong><span>${step.d}</span></div><div class="mvb"><button onclick="mv(this,-1)">↑</button><button onclick="mv(this,1)">↓</button></div>`;
+    list.appendChild(el);
+  });
+}
+function mv(btn,dir){
+  const item=btn.closest('.ei');const list=document.getElementById('eric-list');
+  const items=[...list.children];const idx=items.indexOf(item);const ni=idx+dir;
+  if(ni<0||ni>=items.length)return;
+  if(dir===-1)list.insertBefore(item,items[ni]);else list.insertBefore(items[ni],item);
+}
+function checkEric(){
+  const order=[...document.getElementById('eric-list').children].map(c=>c.dataset.l);
+  const fb=document.getElementById('eric-fb');
+  if(JSON.stringify(order)===JSON.stringify(['E','R','I','C'])){
+    fb.textContent='🎉 Bravo ! L\'ordre E.R.I.C. est correct !';fb.style.color='var(--green)';
+    addPts(20);    [...document.getElementById('eric-list').children].forEach(c=>c.classList.add('ok'));
+  }else{fb.textContent='❌ Pas encore… Rappelle-toi : que fait-on en tout premier ?';fb.style.color='var(--red)';}
+}
+
+// ===== 5. ANALYSE =====
+const sitCorrects=[3,1,0,2]; // type correct (index)
+const sitCorrects2=[1,1,2,1]; // réaction correcte (index)
+const sitFbs=[
+  ['C\'est bien un client indécis : il hésite et revient sur ses choix.',
+   'Exactement ! Une seule recommandation claire + rassurer = la clé avec un client indécis.'],
+  ['Oui, c\'est un client insatisfait : il est déçu d\'un service.',
+   'Parfait ! Reconnaître l\'erreur + proposer une solution = tu évites qu\'il parte fâché.'],
+  ['Oui, c\'est un client agressif : il crie et frappe le comptoir.',
+   'C\'est la bonne approche : calme, écoute, et proposer de gérer ça à l\'écart des autres clients.'],
+  ['C\'est un client bavard : il parle de tout sauf du sujet.',
+   'C\'est ça ! Écouter un peu + recentrer poliment = tu respectes le client ET tu gagnes du temps.'],
+];
+let sitDone=0;
+function checkSit(sel,i){
+  if(sel.value==='')return;
+  const sfb=document.getElementById('sfb'+i);
+  if(parseInt(sel.value)===sitCorrects[i]){
+    sfb.textContent='✅ '+sitFbs[i][0];sfb.className='sit-fb ok show';addPts(5);
+  }else{
+    sfb.textContent='❌ Pas tout à fait... '+sitFbs[i][0];sfb.className='sit-fb ko show';
+  }
+}
+function checkSit2(sel,i){
+  if(sel.value==='')return;
+  if(parseInt(sel.value)===sitCorrects2[i]){addPts(5);}
+  sitDone++;
+  const total=document.querySelectorAll('.sit-item select:last-of-type').length;
+  if(sitDone>=total){document.getElementById('analyse-score').textContent='✅ Toutes les situations analysées !';}
+}
+
+// ===== 6. QUIZ =====
+const qData=[
+  {q:'Un client crie. Que fais-tu EN PREMIER ?',opts:['Tu cries plus fort pour t\'imposer','Tu le laisses parler jusqu\'au bout, calmement','Tu appelles la police','Tu pars chercher ton chef immédiatement'],ok:1,fb:'On laisse TOUJOURS le client finir de parler. Ça le calme plus vite.'},
+  {q:'Pourquoi reformuler ce que dit le client ?',opts:['Pour gagner du temps','Pour lui montrer qu\'on l\'a bien compris','Pour lui prouver qu\'il a tort','Pour faire semblant de s\'intéresser'],ok:1,fb:'Reformuler = valider l\'écoute. Le client se sent compris.'},
+  {q:'Laquelle de ces phrases est à éviter ?',opts:['"Je comprends votre frustration"','"Je suis désolé(e) pour ce désagrément"','"C\'est pas ma faute, voyez avec le chef"','"Je vais trouver une solution pour vous"'],ok:2,fb:'"C\'est pas ma faute" aggrave toujours la situation. On cherche une solution, on ne se défend pas.'},
+  {q:'Un client insatisfait, c\'est avant tout :',opts:['Un client qui veut toujours avoir raison','Un client dont les attentes n\'ont pas été satisfaites','Un client dangereux','Un client de mauvaise foi'],ok:1,fb:'L\'insatisfaction = écart entre ce qu\'il attendait et ce qu\'il a eu. Ta mission : combler cet écart.'},
+  {q:'Quelle est la DERNIÈRE étape de la méthode E.R.I.C. ?',opts:['Écouter','Reformuler','Identifier','Conclure en proposant une solution'],ok:3,fb:'C = Conclure : proposer une solution et vérifier que le client repart satisfait.'},
+  {q:'Face à un client bavard, la meilleure stratégie est de :',opts:['L\'interrompre franchement','L\'écouter jusqu\'à la fin même si ça prend 30 minutes','L\'écouter un moment puis recentrer avec une question précise','Partir s\'occuper d\'un autre client'],ok:2,fb:'On écoute un moment (politesse) puis on recentre avec une question courte et précise.'},
+];
+let qDone=0;
+function initQuiz(){
+  const body=document.getElementById('quiz-body');body.innerHTML='';qDone=0;
+  qData.forEach((q,qi)=>{
+    const div=document.createElement('div');div.style.marginBottom='18px';
+    div.innerHTML=`<p style="font-weight:700;font-size:14px;margin-bottom:9px;">${qi+1}. ${q.q}</p>
+    <div class="opts" id="qo-${qi}">${q.opts.map((o,oi)=>`<button class="opt" onclick="pickQ(this,${qi},${oi})">${o}</button>`).join('')}</div>
+    <div class="fb" id="qfb-${qi}"></div>`;
+    body.appendChild(div);
+  });
+}
+function pickQ(btn,qi,oi){
+  const opts=document.querySelectorAll(`#qo-${qi} .opt`);
+  opts.forEach(o=>o.classList.add('off'));
+  const fb=document.getElementById('qfb-'+qi);fb.classList.add('show');
+  if(oi===qData[qi].ok){btn.classList.add('correct');fb.classList.add('ok');fb.innerHTML='✅ '+qData[qi].fb;addPts(10);}
+  else{btn.classList.add('wrong');opts[qData[qi].ok].classList.add('correct');fb.classList.add('ko');fb.innerHTML='💡 '+qData[qi].fb;}
+  qDone++;
+}
+
+// ===== DESC =====
+const descQuizData = [
+  { phrase: '"Je constate que vous avez attendu 20 minutes sans être aidé."', rep: 'D', expl: 'On décrit les faits objectivement, sans accusation.' },
+  { phrase: '"Cette situation me met en difficulté car d\'autres clients attendent aussi."', rep: 'E', expl: 'On exprime l\'impact ou ce qu\'on ressent.' },
+  { phrase: '"Je vous propose qu\'on règle ça ensemble dès maintenant."', rep: 'S', expl: 'On suggère une solution concrète.' },
+  { phrase: '"Ainsi vous repartirez satisfait et nous aurons trouvé une solution."', rep: 'C', expl: 'On conclut positivement pour avancer.' },
+  { phrase: '"Vous m\'avez dit que le produit ne correspondait pas à la description."', rep: 'D', expl: 'Décrire = rapporter les faits sans les interpréter.' },
+  { phrase: '"Je vous propose un échange ou un remboursement selon votre préférence."', rep: 'S', expl: 'Suggérer = proposer une alternative concrète.' },
+];
+let descDone = 0;
+function initDesc() {
+  const container = document.getElementById('desc-quiz');
+  container.innerHTML = '';
+  descDone = 0;
+  document.getElementById('desc-fb').textContent = '';
+  descQuizData.forEach((item, i) => {
+    const div = document.createElement('div');
+    div.style.cssText = 'border:2px solid #e5e7eb;border-radius:10px;padding:12px;margin-bottom:9px;';
+    div.innerHTML = `<p style="font-size:14px;font-weight:600;margin-bottom:8px;font-style:italic;">"${item.phrase}"</p>
+    <div style="display:flex;gap:7px;flex-wrap:wrap;">
+      ${['D','E','S','C'].map(l=>`<button onclick="pickDesc(this,${i},'${l}')" style="padding:7px 16px;border:2px solid #e5e7eb;border-radius:8px;font-family:'Nunito',Arial,sans-serif;font-weight:800;font-size:14px;cursor:pointer;background:white;transition:all 0.2s;" onmouseover="this.style.borderColor='#1e3a5f'" onmouseout="if(!this.classList.contains('picked'))this.style.borderColor='#e5e7eb'">${l}</button>`).join('')}
+    </div>
+    <div id="desc-item-fb-${i}" style="display:none;font-size:13px;margin-top:7px;padding:7px 10px;border-radius:7px;"></div>`;
+    container.appendChild(div);
+  });
+}
+function pickDesc(btn, i, val) {
+  const row = btn.closest('div[style]');
+  row.querySelectorAll('button').forEach(b => { b.disabled = true; b.classList.add('picked'); });
+  const fb = document.getElementById('desc-item-fb-' + i);
+  fb.style.display = 'block';
+  if (val === descQuizData[i].rep) {
+    btn.style.background = '#f0fdf4'; btn.style.borderColor = '#16a34a'; btn.style.color = '#14532d';
+    fb.style.background = '#f0fdf4'; fb.style.color = '#14532d';
+    fb.textContent = '✅ ' + descQuizData[i].expl;
+    addPts(8);
+  } else {
+    btn.style.background = '#fff1f0'; btn.style.borderColor = '#e8483a'; btn.style.color = '#7f1d1d';
+    fb.style.background = '#fff1f0'; fb.style.color = '#7f1d1d';
+    fb.textContent = '❌ C\'était ' + descQuizData[i].rep + ' — ' + descQuizData[i].expl;
+    row.querySelectorAll('button').forEach(b => { if(b.textContent===descQuizData[i].rep){b.style.background='#f0fdf4';b.style.borderColor='#16a34a';b.style.color='#14532d';} });
+  }
+  descDone++;
+  if (descDone === descQuizData.length) {
+    document.getElementById('desc-fb').textContent = '🎉 Toutes les phrases classées !';
+    document.getElementById('desc-fb').style.color = 'var(--green)';
+  }
+}
+
+// ===== TEXTE À TROUS =====
+// Format: tableau de segments {t: texte, b: true si trou, rep: réponse attendue, id: identifiant}
+const trousPhrases = [
+  { t: 'Face à un client difficile, la première chose à faire est de l\'', b: false },
+  { t: 'écouter', b: true, id: 't1', alts: ['ecouter','écouté','ecoute'] },
+  { t: ' sans l\'interrompre. Il existe ', b: false },
+  { t: '4', b: true, id: 't2', alts: ['quatre'] },
+  { t: ' types de clients difficiles : le client ', b: false },
+  { t: 'agressif', b: true, id: 't3', alts: ['agressif / colérique','colèrique','colèrique','colerique'] },
+  { t: ', le client ', b: false },
+  { t: 'insatisfait', b: true, id: 't4', alts: [] },
+  { t: ', le client ', b: false },
+  { t: 'bavard', b: true, id: 't5', alts: [] },
+  { t: ' et le client ', b: false },
+  { t: 'indécis', b: true, id: 't6', alts: ['indécis','indecis'] },
+  { t: '.', b: false },
+  { t: '\n\nLa méthode ', b: false },
+  { t: 'E.R.I.C.', b: true, id: 't7', alts: ['eric','ERIC','E.R.I.C'] },
+  { t: ' se compose de 4 étapes : ', b: false },
+  { t: 'Écouter', b: true, id: 't8', alts: ['ecouter','écouter','Ecouter'] },
+  { t: ', ', b: false },
+  { t: 'Reformuler', b: true, id: 't9', alts: ['reformuler'] },
+  { t: ', ', b: false },
+  { t: 'Identifier', b: true, id: 't10', alts: ['identifier'] },
+  { t: ' et ', b: false },
+  { t: 'Conclure', b: true, id: 't11', alts: ['conclure'] },
+  { t: '. Cette méthode est utilisée pour ', b: false },
+  { t: 'gérer les réclamations', b: true, id: 't12', alts: ['gérer une réclamation','traiter les réclamations','traiter une réclamation','répondre aux réclamations','gérer les plaintes'] },
+  { t: ' des clients.', b: false },
+  { t: '\n\nLa méthode ', b: false },
+  { t: 'D.E.S.C.', b: true, id: 't13', alts: ['desc','DESC','D.E.S.C'] },
+  { t: ' est utilisée quand il faut ', b: false },
+  { t: 'recadrer', b: true, id: 't14', alts: ['exprimer un désaccord','poser une limite','s\'affirmer','exprimer un desaccord'] },
+  { t: ' une situation ou exprimer un désaccord. D = ', b: false },
+  { t: 'Décrire', b: true, id: 't15', alts: ['décrire','decrire'] },
+  { t: ', E = ', b: false },
+  { t: 'Exprimer', b: true, id: 't16', alts: ['exprimer'] },
+  { t: ', S = ', b: false },
+  { t: 'Suggérer', b: true, id: 't17', alts: ['suggérer','sugerer'] },
+  { t: ', C = ', b: false },
+  { t: 'Conclure', b: true, id: 't18', alts: ['conclure'] },
+  { t: '. L\'objectif est toujours de trouver une solution ', b: false },
+  { t: 'positive', b: true, id: 't19', alts: ['satisfaisante','acceptable','qui convient à tous'] },
+  { t: ' pour le client et pour le magasin.', b: false },
+];
+let trousAnswers = {};
+function initTrous() {
+  const c = document.getElementById('trous-container');
+  c.innerHTML = '';
+  trousAnswers = {};
+  let html = '<p style="margin-bottom:12px;color:var(--muted);font-size:13px;">Complète les zones en pointillés avec le bon mot.</p><div style="line-height:2.4;font-size:14.5px;">';
+  trousPhrases.forEach(seg => {
+    if (!seg.b) {
+      html += seg.t.replace(/\n\n/g, '</div><br><div style="line-height:2.4;font-size:14.5px;">');
+    } else {
+      const w = Math.max(80, seg.rep ? seg.rep.length * 11 : (seg.alts[0]||seg.id).length * 11);
+      html += `<input type="text" id="tr-${seg.id}" data-id="${seg.id}" placeholder="............" style="width:${Math.min(w,220)}px;border:none;border-bottom:2.5px solid var(--blue);padding:2px 6px;font-family:'Nunito',Arial,sans-serif;font-size:14px;background:transparent;outline:none;text-align:center;color:var(--blue);font-weight:700;">`;
+    }
+  });
+  html += '</div>';
+  c.innerHTML = html;
+}
+function checkTrous() {
+  let good = 0, total = 0;
+  trousPhrases.filter(s=>s.b).forEach(seg => {
+    total++;
+    const input = document.getElementById('tr-' + seg.id);
+    if (!input) return;
+    const val = input.value.trim().toLowerCase();
+    const correct = val === seg.t.toLowerCase() || (seg.alts && seg.alts.map(a=>a.toLowerCase()).includes(val));
+    if (correct) {
+      good++;
+      input.style.borderColor = 'var(--green)'; input.style.color = 'var(--green)';
+      addPts(3);
+    } else {
+      input.style.borderColor = 'var(--red)'; input.style.color = 'var(--red)';
+      // show answer
+      input.placeholder = seg.t;
+    }
+  });
+  if (good >= total * 0.6) {
+    var scoreMsg = good + ' / ' + total + ' corrects — Tu peux continuer !';
+  } else {
+    var scoreMsg = good + ' / ' + total + ' corrects — Corrige les mots en rouge puis réessaie !';
+  }
+  var existing = document.getElementById('trous-score');
+  if (!existing) {
+    var scoreEl = document.createElement('div');
+    scoreEl.id = 'trous-score';
+    scoreEl.style.cssText = 'font-size:13.5px;font-weight:700;color:var(--blue);margin-bottom:8px;';
+    scoreEl.textContent = scoreMsg;
+    document.getElementById('trous-container').after(scoreEl);
+  } else {
+    existing.textContent = scoreMsg;
+  }
+}
+function resetTrous() { initTrous(); var s = document.getElementById('trous-score'); if(s) s.remove(); }
+function getTrousText() {
+  let txt = '';
+  trousPhrases.forEach(seg => {
+    if (!seg.b) { txt += seg.t; }
+    else {
+      const input = document.getElementById('tr-' + seg.id);
+      txt += input ? '[' + (input.value || '...') + ']' : '[...]';
+    }
+  });
+  return txt;
+}
+
+
+function fillResume(){
+  document.getElementById('r-prenom').textContent=document.getElementById('f-prenom').value||'Élève';
+  document.getElementById('r-date').textContent=new Date().toLocaleDateString('fr-FR');
+  document.getElementById('r1').textContent=document.getElementById('f1').value||'(non rempli)';
+  document.getElementById('r2').textContent=document.getElementById('f2').value||'(non rempli)';
+  document.getElementById('r3').textContent=document.getElementById('f3').value||'(non rempli)';
+  document.getElementById('r6').textContent=document.getElementById('f6').value||'(non rempli)';
+  document.getElementById('r4').textContent=document.getElementById('f4').value||'(non rempli)';
+  document.getElementById('r5').textContent=document.getElementById('f5').value||'(non rempli)';
+  document.getElementById('r-score').textContent=score+' points';
+  document.getElementById('r-trous').textContent=getTrousText();
+}
+function doPrint(){fillResume();window.print();}
+
+// ===== 10. COPIER =====
+</script>
+</body>
+</html>
