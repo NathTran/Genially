@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>🛒 Le Labyrinthe Carrefour – CAP EPC</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap');
+:root{--blue:#003087;--red:#e5002b;--yellow:#f7c800;--green:#16a34a;}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;overflow:hidden;background:#080f20;font-family:'Nunito',sans-serif;}
+
+/* ── HEADER ── */
+#hdr{
+  height:48px;
+  background:linear-gradient(90deg,#001040,#002570,#001040);
+  border-bottom:2px solid var(--yellow);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 14px;flex-shrink:0;
+}
+.logo{font-family:'Fredoka One',cursive;color:var(--yellow);font-size:19px;letter-spacing:.5px;}
+.logo span{color:#fff;}
+.hud{display:flex;gap:8px;}
+.pill{background:rgba(255,255,255,.12);color:#fff;font-weight:800;font-size:12px;padding:3px 12px;border-radius:20px;}
+.pill.y{background:var(--yellow);color:var(--blue);}
+
+/* ── LAYOUT ── */
+#app{display:flex;height:calc(100vh - 48px);}
+
+/* ── LABYRINTHE ── */
+#maze-wrap{
+  flex:0 0 auto;
+  background:#030912;
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;
+  position:relative;
+}
+#maze-canvas{
+  display:block;
+  image-rendering:pixelated;
+  image-rendering:crisp-edges;
+}
+/* Flèches directionnelles */
+#dpad{
+  position:absolute;bottom:8px;right:8px;
+  display:grid;grid-template-columns:repeat(3,32px);grid-template-rows:repeat(2,32px);
+  gap:3px;
+}
+.dp{
+  width:32px;height:32px;
+  background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);
+  border-radius:6px;color:#fff;font-size:16px;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;user-select:none;transition:background .1s;
+}
+.dp:active{background:rgba(255,255,255,.3);}
+.dp.empty{background:transparent;border:none;pointer-events:none;}
+
+/* ── PANNEAU DROIT ── */
+#panel{
+  flex:1;overflow-y:auto;
+  background:#f0f5ff;
+  padding:12px;
+  display:flex;flex-direction:column;gap:10px;
+  min-width:280px;
+}
+
+/* INSTRUCTIONS */
+.instr{
+  background:linear-gradient(135deg,#003087,#0050c8);
+  border-radius:12px;padding:14px;color:#fff;
+}
+.instr h3{font-family:'Fredoka One',cursive;color:var(--yellow);font-size:16px;margin-bottom:7px;}
+.instr p{font-size:12.5px;line-height:1.6;color:rgba(255,255,255,.85);margin-bottom:5px;}
+.keys{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;}
+.key{background:rgba(255,255,255,.15);border-radius:6px;padding:3px 10px;font-size:11px;font-weight:700;}
+
+/* MINI-CARTE QUESTIONS */
+.quest-map{
+  background:#fff;border-radius:12px;padding:12px;
+  box-shadow:0 2px 10px rgba(0,48,135,.08);
+}
+.quest-map h4{font-size:11px;font-weight:800;color:var(--blue);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+.qm-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;}
+.qm-item{
+  background:#f5f8ff;border:1.5px solid #dde5ff;
+  border-radius:7px;padding:4px;text-align:center;
+  font-size:10px;font-weight:700;color:#374151;
+  transition:all .2s;
+}
+.qm-item.done{background:#f0fdf4;border-color:#86efac;color:#14532d;}
+.qm-item.fail{background:#fff1f0;border-color:#fca5a5;color:#7f1d1d;}
+.qm-item.active{background:#fef9c3;border-color:#fde047;color:#713f12;transform:scale(1.05);}
+
+/* QUESTION CARD */
+.q-card{
+  background:#fff;border-radius:13px;
+  box-shadow:0 3px 16px rgba(0,48,135,.12);
+  overflow:hidden;animation:popIn .3s ease;
+}
+@keyframes popIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.q-top{padding:11px 15px;display:flex;align-items:center;gap:9px;}
+.q-badge{background:var(--yellow);color:var(--blue);font-family:'Fredoka One',cursive;font-size:11px;padding:2px 10px;border-radius:20px;white-space:nowrap;}
+.q-lieu{font-family:'Fredoka One',cursive;font-size:15px;color:#fff;}
+.q-sit{background:#f5f9ff;border-left:4px solid var(--blue);padding:9px 13px;margin:2px 13px 9px;border-radius:0 8px 8px 0;font-size:13px;line-height:1.6;}
+.q-cli{display:flex;gap:8px;margin:0 13px 10px;align-items:flex-start;}
+.q-av{font-size:28px;flex-shrink:0;}
+.q-bub{background:#fff;border:2px solid #dde5ff;border-radius:10px;padding:7px 11px;font-size:13px;font-style:italic;color:#374151;flex:1;position:relative;}
+.q-bub::before{content:'';position:absolute;left:-8px;top:10px;border:6px solid transparent;border-right-color:#dde5ff;}
+.q-hint{font-size:12px;font-weight:700;color:#6b7280;padding:0 13px 6px;}
+.q-label{font-size:13.5px;font-weight:800;color:var(--blue);padding:0 13px 7px;}
+.choices{padding:0 13px 13px;display:flex;flex-direction:column;gap:7px;}
+.cbtn{
+  display:flex;align-items:center;gap:9px;
+  padding:10px 12px;border:2.5px solid #e5e7eb;border-radius:10px;
+  background:#fff;cursor:pointer;
+  font-family:'Nunito',sans-serif;font-size:13px;font-weight:600;text-align:left;
+  transition:all .18s;
+}
+.cbtn:hover:not(.dis){border-color:var(--blue);background:#eff6ff;transform:translateX(3px);}
+.cbtn .ci{font-size:20px;flex-shrink:0;}
+.cbtn.ok{border-color:var(--green)!important;background:#f0fdf4;color:#14532d;}
+.cbtn.bad{border-color:var(--red)!important;background:#fff1f0;color:#7f1d1d;}
+.cbtn.dis{pointer-events:none;}
+.cbtn.dis:not(.ok):not(.bad){opacity:.3;}
+.fb{display:none;margin:0 13px 11px;border-radius:10px;padding:10px 12px;font-size:12.5px;line-height:1.6;}
+.fb.show{display:block;animation:fadeIn .3s;}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.fb.ok{background:#f0fdf4;border:2px solid var(--green);}
+.fb.bad{background:#fff1f0;border:2px solid var(--red);}
+.ft{font-weight:800;font-size:13px;margin-bottom:4px;}
+.fb.ok .ft{color:var(--green);}
+.fb.bad .ft{color:var(--red);}
+.frule{margin-top:6px;padding:7px 9px;border-radius:7px;background:rgba(255,255,255,.8);font-size:12px;border-left:3px solid currentColor;}
+
+/* IMPASSE */
+.dead-card{
+  background:#fff;border-radius:13px;padding:15px;text-align:center;
+  border:3px solid var(--red);animation:popIn .3s;
+}
+.dead-card h3{font-family:'Fredoka One',cursive;color:var(--red);font-size:16px;margin-bottom:5px;}
+.dead-card p{font-size:12.5px;color:#6b7280;line-height:1.5;margin-bottom:9px;}
+.dead-rule{background:#fff1f0;border:2px solid var(--red);border-radius:8px;padding:8px 11px;font-size:12.5px;font-weight:700;color:#7f1d1d;margin-bottom:11px;}
+.retry-btn{padding:9px 20px;background:#f59e0b;color:#fff;border:none;border-radius:10px;cursor:pointer;font-family:'Fredoka One',cursive;font-size:13px;transition:all .2s;}
+.retry-btn:hover{background:#d97706;}
+
+/* NEXT */
+.nxt{display:none;margin:0 13px 13px;padding:10px 18px;background:var(--blue);color:#fff;border:none;border-radius:10px;cursor:pointer;font-family:'Fredoka One',cursive;font-size:14px;box-shadow:0 3px 10px rgba(0,48,135,.25);transition:all .2s;width:fit-content;}
+.nxt:hover{background:#0050c8;transform:translateY(-1px);}
+.nxt.show{display:block;}
+
+/* FIN */
+.end-card{background:#fff;border-radius:13px;padding:22px;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.1);animation:popIn .5s;}
+.end-card h2{font-family:'Fredoka One',cursive;font-size:22px;margin-bottom:5px;}
+.end-card.win h2{color:var(--green);}
+.end-card.lose h2{color:#f59e0b;}
+.end-score{display:inline-block;background:var(--yellow);color:var(--blue);font-weight:800;font-size:14px;padding:5px 18px;border-radius:20px;margin:7px 0 12px;}
+.end-msg{font-size:13px;color:#6b7280;line-height:1.6;max-width:360px;margin:0 auto 14px;}
+.end-btns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
+.btn-r{padding:9px 18px;background:var(--blue);color:#fff;border:none;border-radius:10px;cursor:pointer;font-family:'Fredoka One',cursive;font-size:13px;}
+.btn-p{padding:9px 18px;background:var(--red);color:#fff;border:none;border-radius:10px;cursor:pointer;font-family:'Fredoka One',cursive;font-size:13px;}
+
+/* SYNTHESE */
+.synth{background:#fff;border-radius:13px;overflow:hidden;box-shadow:0 2px 12px rgba(0,48,135,.08);}
+.sh{background:var(--blue);color:#fff;padding:11px 16px;font-family:'Fredoka One',cursive;font-size:16px;}
+.sb{padding:13px 15px;}
+.srow{display:flex;gap:8px;align-items:flex-start;padding:7px 0;border-bottom:1px solid #f3f4f6;}
+.srow:last-child{border-bottom:none;}
+.snum{width:22px;height:22px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#fff;}
+.snum.ok{background:var(--green);}
+.snum.bad{background:var(--red);}
+.sc strong{font-size:12.5px;display:block;margin-bottom:1px;}
+.sc p{font-size:11.5px;color:#6b7280;line-height:1.4;}
+.sc .sr{font-size:11.5px;color:var(--green);font-weight:700;margin-top:2px;}
+.sc .st{font-size:10.5px;color:#f59e0b;font-weight:700;}
+
+@media print{body,html{overflow:visible!important;height:auto!important;}#hdr,#app{display:none!important;}#pz{display:block!important;}}
+#pz{display:none;}
+</style>
+</head>
+<body>
+
+<div id="hdr">
+  <div class="logo">🛒 Le Labyrinthe <span>Carrefour</span></div>
+  <div class="hud">
+    <div class="pill" id="t-disp">⏱ 00:00</div>
+    <div class="pill y" id="s-disp">⭐ 0 pt</div>
+    <div class="pill" id="e-disp">0/12 zones</div>
+  </div>
+</div>
+
+<div id="app">
+  <div id="maze-wrap">
+    <canvas id="maze-canvas"></canvas>
+    <!-- D-PAD tactile -->
+    <div id="dpad">
+      <div class="dp empty"></div>
+      <div class="dp" id="dp-up"   onclick="mv(-1,0)">↑</div>
+      <div class="dp empty"></div>
+      <div class="dp" id="dp-left" onclick="mv(0,-1)">←</div>
+      <div class="dp" id="dp-dn"   onclick="mv(1,0)">↓</div>
+      <div class="dp" id="dp-rt"   onclick="mv(0,1)">→</div>
+    </div>
+  </div>
+  <div id="panel"><div id="gc"></div></div>
+</div>
+<div id="pz"></div>
+
+<script>
+// ═══════════════════════════════════════════
+// DONNÉES DU LABYRINTHE
+// ═══════════════════════════════════════════
+const GW=51, GH=71;
+const GRID_ROWS=[
+"000000000000000000000000000000000000000000000000000",
+"010111011111111111111111011101111111011111110111110",
+"010100010000000000010001000101010000010001000100010",
+"010101110111111111010101111101011101111101011101110",
+"010101000001000001010100000101000101000001010001010",
+"010111111111011111010111110101110111011101111101010",
+"010000000000010000010100010100010000010100000001000",
+"011111011111110101110111011111011101110111111101110",
+"000001000100000101000000000000000101000000000100010",
+"011101110111110101111111011111111101011101110111010",
+"010100010000010100000001010000000001010101010001010",
+"010101110111111111011111010101111111010111011101110",
+"010101000100000001010001010101010000000001010000010",
+"010101011101110111011101011101010111111101011111110",
+"010001010001010000000100000101010100000101000000000",
+"011111011101011111110111110101010101011101110111110",
+"010000000001000000010100010101000101010000010100010",
+"010111111111011111110111010101111111011101011101010",
+"010101000000010000000001010100000000000101000001010",
+"010101111101011111110111011111111101111101111111010",
+"010001000101000000010100000000000001000000000100010",
+"011101011101111101110111110111111101011101110101110",
+"000100010000000101000001000100000101010101010101000",
+"010101110111111101110111011101011101010111010111110",
+"010101000101000100010100010001010001010000010100000",
+"010111011101011101110111010111010111111101110101110",
+"010000000101000101000000010001010000000101000101010",
+"011111110101110101111111110111011111011101110101010",
+"010100010000010000000000000100000001010000010101010",
+"010111011111110111111111011111111111011101110101010",
+"010001000000010100010000010000000000000101000001010",
+"010111011111110101011111010111011111111101111111010",
+"010100000000000101000001010101010000000001000000010",
+"010111110111111101111101110101010111011101011101110",
+"010000010100000001000100000101010101010101010101010",
+"010111011101111111010111011101010101110101110101010",
+"010100000001000100010001000100010100000100000101010",
+"010101111101110101111111110111110101011101111101010",
+"010101000100010100000000010100000101010001000001000",
+"010111011101110101111101110101111101110111011101110",
+"010000010001000101000101000001000001000100010100010",
+"011101110111010111011101111111011101010101010111010",
+"000101000100010000010000000000010101010101010001010",
+"011101011111111101110111111101110101010101011101010",
+"010001010000000001010100000101010001010101000101010",
+"010111110111111111010101110101011101010111010101110",
+"010100000100000001000101010101000101010001010100010",
+"010111011101111101011111010101110111011101110111010",
+"010001010001000100010000000100010000010100010001000",
+"011101011111010111110101111101010111010111110101110",
+"000100000100010000000101000001010001010000000100010",
+"010101110111110111111101011111011101011111111111010",
+"010101010000010000010001010001000101000000000001010",
+"010111010111111111110111010111011101111111110111010",
+"010000010000000000000100010101010001000000010100010",
+"011111011111011101111101110101011101110111011101110",
+"010001000001010101000000000101000100010001000001010",
+"011101111101110111011111111101110101111111011101010",
+"000001000100000000000101000100000100000000010101010",
+"011101110111011111110101110101110111111111110111010",
+"010100010001000100010100010001010000000000000000010",
+"010111110101111101110111011101011101111111110111110",
+"010000000100000001000000000101000101000100000100000",
+"011111110111111111111111011101110111011101110111010",
+"010000010000000000000001010100010000010001010001010",
+"011101010111111111011111110111011101011111011111010",
+"000101010100000001000000000001000101000000000000010",
+"010111011101111101011101111101011101111111111101110",
+"010001000001000101010101000100010000010000000101010",
+"011111111111011101110111110111111111110111111111010",
+"000000000000000000000000000000000000000000000000000"
+];
+const HOTSPOTS=[{"r": 3, "c": 27, "step": 0}, {"r": 7, "c": 27, "step": 1}, {"r": 13, "c": 27, "step": 2}, {"r": 19, "c": 27, "step": 3}, {"r": 21, "c": 23, "step": 4}, {"r": 29, "c": 27, "step": 5}, {"r": 35, "c": 27, "step": 6}, {"r": 37, "c": 27, "step": 7}, {"r": 43, "c": 31, "step": 8}, {"r": 47, "c": 21, "step": 9}, {"r": 51, "c": 29, "step": 10}, {"r": 57, "c": 27, "step": 11}];
+const START=[1,1];
+const END=[69,49];
+
+// Accès rapide: grid[r][c] -> '0' (mur) ou '1' (couloir)
+function cell(r,c){ return (r>=0&&r<GH&&c>=0&&c<GW) ? GRID_ROWS[r][c] : '0'; }
+function isOpen(r,c){ return cell(r,c)==='1'; }
+
+// Map des hotspots: "r,c" -> stepIndex
+const HS_MAP = {};
+HOTSPOTS.forEach((h,i)=>{ HS_MAP[h.r+','+h.c]=i; });
+
+// ═══════════════════════════════════════════
+// QUESTIONS (12)
+// ═══════════════════════════════════════════
+const QUESTIONS=[
+  {id:1,lieu:'🚪 Entrée du magasin',
+   bg:'linear-gradient(135deg,#003087,#0050c8)',av:'👴',
+   sit:'Un monsieur âgé entre dans le magasin portant deux énormes cartons. Il avance avec difficulté et cherche de l\'aide.',
+   dg:'— Excusez-moi… je cherche juste à poser ça quelque part…',
+   q:'Quelle est ta première réaction ?',
+   hint:'⚠️ Pense aux règles de sécurité avant d\'agir !',
+   choix:[
+     {icon:'💪',txt:'Tu lui proposes de porter les cartons toi-même pour l\'aider.',ok:false,
+      ft:'⚠️ Fausse piste ! Rebrousse chemin.',
+      fb:'Porter les affaires d\'un client est interdit : risque d\'accident (dos, chute) et responsabilité du magasin.',
+      rule:'✅ Règle : ne JAMAIS porter les objets des clients. Proposer un équipement adapté.'},
+     {icon:'🛒',txt:'Tu lui proposes un chariot ou un diable pour transporter ses cartons confortablement.',ok:true,
+      ft:'✅ Bon réflexe, continue !',
+      fb:'Proposer un chariot ou un diable, c\'est la solution idéale : tu aides le client en toute sécurité. Tu peux même l\'accompagner.',
+      rule:'🌟 Équipement adapté = service + sécurité.'},
+   ]},
+  {id:2,lieu:'🗺️ Accueil / Orientation',
+   bg:'linear-gradient(135deg,#0369a1,#0ea5e9)',av:'👩',
+   sit:'Une jeune femme tourne en rond depuis quelques minutes avec son téléphone en main.',
+   dg:'— Pardon… les croquettes pour chat, c\'est par là ?',
+   q:'Comment l\'orienter efficacement ?',
+   hint:'💡 Une bonne orientation est précise — le client ne doit pas se perdre !',
+   choix:[
+     {icon:'👉',txt:'Tu lui indiques vaguement : "C\'est au fond du magasin, par là."',ok:false,
+      ft:'⚠️ Mauvaise direction ! Impasse.',
+      fb:'Une indication vague laisse le client se débrouiller seul. Il risque de repartir sans acheter.',
+      rule:'✅ Règle : accompagner OU donner l\'allée précise + repère visuel.'},
+     {icon:'🚶',txt:'Tu l\'accompagnes jusqu\'au rayon Animalerie (allée 14) et lui montres l\'emplacement exact.',ok:true,
+      ft:'✅ Excellent service, tu avances !',
+      fb:'Accompagner le client jusqu\'au rayon, c\'est le top. Il se sent pris en charge et gagne du temps.',
+      rule:'🌟 L\'accompagnement physique est la meilleure orientation possible.'},
+   ]},
+  {id:3,lieu:'🥩 Rayon Boucherie',
+   bg:'linear-gradient(135deg,#b91c1c,#dc2626)',av:'🧔',
+   sit:'Un client hésite entre deux produits depuis plusieurs minutes, comparant les étiquettes.',
+   dg:'— C\'est quoi la différence entre le bœuf haché 5% et 15% de matière grasse ?',
+   q:'Comment lui répondre ?',
+   hint:'💡 Le client attend un conseil. Même si ce n\'est pas ton rayon, il faut une réponse !',
+   choix:[
+     {icon:'🤷',txt:'Tu lui dis que tu ne sais pas et que tu n\'es pas du rayon boucherie.',ok:false,
+      ft:'⚠️ Impasse ! Client laissé sans aide.',
+      fb:'Dire "je ne sais pas" sans proposer de solution laisse le client sans aide. Ce n\'est pas professionnel.',
+      rule:'✅ Règle : si tu ne sais pas, trouver quelqu\'un qui sait. Ne jamais laisser sans réponse.'},
+     {icon:'💬',txt:'Tu lui expliques la différence (5%=maigre/régime, 15%=savoureux/grillades) et proposes d\'appeler un collègue boucher si besoin.',ok:true,
+      ft:'✅ Excellent conseil, en route !',
+      fb:'Donner un conseil utile ou orienter vers un spécialiste, c\'est le bon réflexe professionnel.',
+      rule:'🌟 Conseiller = connaître les produits OU orienter vers le bon interlocuteur.'},
+   ]},
+  {id:4,lieu:'❄️ Rayon Surgelés',
+   bg:'linear-gradient(135deg,#0284c7,#38bdf8)',av:'👧',
+   sit:'Une adolescente tient une pizza surgelée. Elle regarde la DLC (dans 3 jours) avec inquiétude.',
+   dg:'— C\'est encore bon si elle était au congélo depuis ce matin ?',
+   q:'Comment lui expliquer correctement la réglementation ?',
+   hint:'⚠️ La sécurité alimentaire est sérieuse — une erreur peut être dangereuse !',
+   choix:[
+     {icon:'😬',txt:'Tu lui dis que la DLC sur les surgelés, ce n\'est vraiment pas si important.',ok:false,
+      ft:'⚠️ Information incorrecte — impasse !',
+      fb:'La DLC (Date Limite de Consommation) est obligatoire. Donner une fausse info engage la responsabilité du magasin.',
+      rule:'✅ Règle : la DLC doit être respectée. Un surgelé périmé ne doit pas être vendu.'},
+     {icon:'🧊',txt:'Tu expliques que la DLC est valable tant que le produit est resté continuellement congelé.',ok:true,
+      ft:'✅ Information juste et rassurante !',
+      fb:'La DLC est valable en conservation continue au congélateur. Tu as donné une information exacte et utile.',
+      rule:'🌟 Maîtriser DLC/DDM = sécurité alimentaire + confiance client.'},
+   ]},
+  {id:5,lieu:'🛒 Rupture de stock',
+   bg:'linear-gradient(135deg,#065f46,#16a34a)',av:'😤',
+   sit:'Un client revient pour la 3ᵉ fois cette semaine. Son beurre habituel est encore absent du rayon. Il est clairement agacé.',
+   dg:'— Ça fait TROIS fois que je reviens ! Le beurre demi-sel 500g, vous l\'avez ou pas ?!',
+   q:'Comment gérer cette situation ?',
+   hint:'💡 Un client agacé a besoin d\'une solution concrète, pas d\'excuses creuses.',
+   choix:[
+     {icon:'😶',txt:'Tu lui dis que tu n\'y peux rien, la livraison est en retard, et qu\'il devra revenir.',ok:false,
+      ft:'⚠️ Le client repart frustré — impasse !',
+      fb:'"On n\'y peut rien" sans alternative laisse le client encore plus frustré après 3 déplacements inutiles.',
+      rule:'✅ Règle : rupture de stock = vérifier en réserve + proposer une alternative.'},
+     {icon:'🔍',txt:'Tu t\'excuses sincèrement, vérifies en réserve et proposes une alternative (autre marque ou format).',ok:true,
+      ft:'✅ Bien géré, tu continues !',
+      fb:'Vérifier en réserve et proposer une alternative montre que tu prends la demande au sérieux.',
+      rule:'🌟 Rupture de stock = réserve + alternative = client satisfait.'},
+   ]},
+  {id:6,lieu:'🏷️ Erreur de prix en caisse',
+   bg:'linear-gradient(135deg,#b45309,#f59e0b)',av:'😠',
+   sit:'Un client arrive en caisse avec une bouteille de vin. Le prix en rayon était 7,50€ mais la caisse affiche 9,90€.',
+   dg:'— C\'est quoi ça ?! En rayon c\'était 7,50€ ! Vous n\'allez pas me facturer 9,90€ !',
+   q:'Comment gérer cette situation légalement ?',
+   hint:'⚖️ Il existe une loi précise sur les conflits de prix en France !',
+   choix:[
+     {icon:'🚫',txt:'Tu lui expliques que le prix en caisse est le prix officiel et qu\'il n\'y a rien à faire.',ok:false,
+      ft:'⚠️ Réponse illégale — impasse !',
+      fb:'C\'est contraire au Code de la consommation. En cas de conflit, c\'est le prix le plus bas affiché qui prime.',
+      rule:'✅ Loi : en cas de conflit de prix, le prix affiché en rayon prime sur le prix en caisse.'},
+     {icon:'✅',txt:'Tu vérifies le prix en rayon et appliques le tarif le moins cher (7,50€) conformément à la loi.',ok:true,
+      ft:'✅ Réponse légale et professionnelle !',
+      fb:'Tu appliques la loi correctement. Le client repart satisfait et le magasin est protégé.',
+      rule:'🌟 Connaître la loi sur les prix = protéger le client ET le magasin.'},
+   ]},
+  {id:7,lieu:'💳 Caisse prioritaire',
+   bg:'linear-gradient(135deg,#7c3aed,#a855f7)',av:'👵',
+   sit:'Une dame âgée avec une canne cherche une file courte. Il y a beaucoup de monde aux caisses.',
+   dg:'— Oh là là… c\'est plein partout… je peux aller où, moi ?',
+   q:'Quelle caisse lui conseilles-tu ?',
+   hint:'💡 Connais-tu les caisses spéciales du magasin ?',
+   choix:[
+     {icon:'🖥️',txt:'Tu lui indiques les caisses libre-service : personne et c\'est rapide.',ok:false,
+      ft:'⚠️ Pas adapté à cette cliente — impasse !',
+      fb:'Les caisses libre-service sont inadaptées à une personne âgée avec une canne. La solution doit s\'adapter à la personne.',
+      rule:'✅ Règle : personnes âgées, handicapées, femmes enceintes → caisse prioritaire.'},
+     {icon:'⭐',txt:'Tu l\'accompagnes vers la caisse prioritaire réservée aux personnes nécessitant une aide.',ok:true,
+      ft:'✅ Bienveillant et correct, avance !',
+      fb:'La caisse prioritaire existe exactement pour ces situations. Tu soignes la fin de l\'expérience.',
+      rule:'🌟 Dispositifs prioritaires = service personnalisé et inclusif.'},
+   ]},
+  {id:8,lieu:'🗣️ Client bavard',
+   bg:'linear-gradient(135deg,#0f766e,#14b8a6)',av:'🧓',
+   sit:'Un client te raconte ses vacances en détail. Cinq personnes font la queue derrière lui.',
+   dg:'— Et donc j\'étais à Biarritz, vous connaissez ? L\'année d\'avant j\'étais à… enfin bref, je voulais demander où sont les biscuits…',
+   q:'Comment gérer ce client bavard sans le blesser ?',
+   hint:'💡 Être poli ET efficace — les deux à la fois, c\'est possible !',
+   choix:[
+     {icon:'😴',txt:'Tu l\'écoutes en entier pour ne pas le blesser, même si ça dure 10 minutes.',ok:false,
+      ft:'⚠️ La file d\'attente explose — impasse !',
+      fb:'Laisser un client monopoliser ton attention bloque les autres. Il faut recentrer poliment.',
+      rule:'✅ Règle : écouter brièvement + recentrer avec une question fermée et précise.'},
+     {icon:'🎯',txt:'Tu l\'interromps poliment : "Je comprends, et pour vos biscuits, c\'est l\'allée 8 — je vous y emmène !"',ok:true,
+      ft:'✅ Efficace et respectueux !',
+      fb:'Recentrer avec une affirmation ou question précise, c\'est la bonne méthode pour un client bavard.',
+      rule:'🌟 Client bavard = écouter brièvement + recentrer + guider vers la solution.'},
+   ]},
+  {id:9,lieu:'📦 Retour produit',
+   bg:'linear-gradient(135deg,#1d4ed8,#3b82f6)',av:'👨',
+   sit:'Un client veut retourner un grille-pain acheté il y a 8 jours qui ne fonctionne pas. Il n\'a plus son ticket de caisse.',
+   dg:'— J\'ai acheté ce grille-pain ici il y a 8 jours, il ne fonctionne pas. J\'ai perdu mon ticket, vous pouvez l\'échanger ?',
+   q:'Que faire selon la réglementation ?',
+   hint:'⚖️ La loi protège le consommateur même sans ticket de caisse !',
+   choix:[
+     {icon:'❌',txt:'Tu refuses catégoriquement : sans ticket, pas d\'échange possible.',ok:false,
+      ft:'⚠️ Refus abusif — impasse !',
+      fb:'La loi n\'exige pas le ticket pour la garantie légale de conformité (2 ans). Le refus peut être illégal.',
+      rule:'✅ Règle : garantie légale de conformité = 2 ans. Preuve alternative : relevé CB, carte fidélité.'},
+     {icon:'✅',txt:'Tu vérifies avec d\'autres preuves d\'achat (relevé CB, carte fidélité) et engages la procédure d\'échange.',ok:true,
+      ft:'✅ Réponse conforme à la loi !',
+      fb:'La garantie légale de conformité dure 2 ans. Un relevé bancaire ou la carte fidélité peut remplacer le ticket.',
+      rule:'🌟 Garantie légale 2 ans même sans ticket — CB ou fidélité = preuve suffisante.'},
+   ]},
+  {id:10,lieu:'🪧 Signalétique & prix',
+   bg:'linear-gradient(135deg,#4c1d95,#7c3aed)',av:'👩‍🦱',
+   sit:'Une cliente se plaint que plusieurs produits en rayon n\'ont pas de prix affiché.',
+   dg:'— Il n\'y a aucun prix sur ces produits ! Je ne sais pas combien ils coûtent — c\'est illégal non ?',
+   q:'Est-ce illégal et que dois-tu faire ?',
+   hint:'⚖️ L\'affichage des prix est réglementé par la loi française.',
+   choix:[
+     {icon:'🤔',txt:'Tu lui dis que tu ne sais pas si c\'est obligatoire et qu\'elle peut demander en caisse.',ok:false,
+      ft:'⚠️ Réponse insuffisante — impasse !',
+      fb:'L\'affichage des prix est obligatoire par la loi pour tout produit exposé à la vente. Ne pas le savoir n\'est pas professionnel.',
+      rule:'✅ Règle : prix non affiché = infraction. Signaler immédiatement au responsable rayon.'},
+     {icon:'📋',txt:'Tu confirmes que c\'est illégal et tu signales immédiatement le problème au responsable rayon.',ok:true,
+      ft:'✅ Réaction professionnelle !',
+      fb:'L\'affichage des prix est une obligation légale. Signaler au responsable montre ton sérieux et protège le magasin.',
+      rule:'🌟 Prix non affiché = signaler au responsable = réflexe pro obligatoire.'},
+   ]},
+  {id:11,lieu:'📢 Réclamation formelle',
+   bg:'linear-gradient(135deg,#9f1239,#e11d48)',av:'😡',
+   sit:'Un client très en colère exige le livre de réclamations et menace de porter plainte.',
+   dg:'— Je veux le livre de réclamations ET le numéro de votre direction ! Votre service est NUL !',
+   q:'Comment gérer cette situation délicate ?',
+   hint:'💡 Garder son calme face à l\'agressivité — c\'est la clé.',
+   choix:[
+     {icon:'😤',txt:'Tu lui dis qu\'il exagère et que le service est très bien noté par les autres clients.',ok:false,
+      ft:'⚠️ Escalade du conflit — impasse !',
+      fb:'Contredire un client en colère aggrave TOUJOURS la situation. Ce n\'est jamais la bonne approche.',
+      rule:'✅ Règle : ne jamais contredire frontalement. Écouter + reformuler + proposer une solution.'},
+     {icon:'🧘',txt:'Tu restes calme, l\'écoutes sans l\'interrompre, lui remets le livre de réclamations et proposes de parler à ton responsable.',ok:true,
+      ft:'✅ Gestion professionnelle exemplaire !',
+      fb:'Garder son calme, écouter sans couper et orienter vers un responsable : exactement la bonne méthode.',
+      rule:'🌟 Client agressif : écouter + calme + escalader vers le responsable.'},
+   ]},
+  {id:12,lieu:'🚗 Sortie du magasin',
+   bg:'linear-gradient(135deg,#14532d,#16a34a)',av:'😊',
+   sit:'Un client a terminé ses courses avec un chariot très chargé. Il se dirige vers la sortie et cherche le parking.',
+   dg:'— Excusez-moi, je peux sortir par là avec mon chariot pour rejoindre ma voiture ?',
+   q:'Comment terminer parfaitement l\'expérience client ?',
+   hint:'🌟 La dernière impression compte autant que la première !',
+   choix:[
+     {icon:'👋',txt:'Tu lui réponds "Oui, par là" et tu retournes à ton activité sans plus de détails.',ok:false,
+      ft:'⚠️ Expérience incomplète — impasse !',
+      fb:'C\'est trop succinct. Soigner la sortie est aussi important que l\'accueil pour fidéliser le client.',
+      rule:'✅ Règle : soigner la sortie = dernière impression = fidélisation.'},
+     {icon:'🗺️',txt:'Tu lui indiques la sortie piéton/chariot, la zone de chargement et où rendre le chariot pour récupérer sa pièce.',ok:true,
+      ft:'✅ Service complet, client heureux !',
+      fb:'Donner toutes les infos utiles à la sortie montre un service complet du début à la fin. Le client reviendra.',
+      rule:'🌟 Service de bout en bout = fidélisation garantie.'},
+   ]},
+];
+
+// ═══════════════════════════════════════════
+// CANVAS & RENDU
+// ═══════════════════════════════════════════
+const cv = document.getElementById('maze-canvas');
+const ctx = cv.getContext('2d');
+let CELL = 10;
+
+const COLORS = {
+  wall:   '#050d1f',
+  wallHL: '#0a1c3a',  // highlight mur
+  floor:  '#1a2d52',
+  floorBright: '#dce8ff',
+  visited:'#7cb9e8',
+  good:   '#4ade80',
+  bad:    '#f87171',
+  start:  '#f7c800',
+  end:    '#16a34a',
+  hotspot:'#a5f3fc',
+  hotspotDone:'#4ade80',
+  hotspotActive:'#fef08a',
+  char:   '#fef08a',
+};
+
+// Overlay couleurs
+const OV = Array.from({length:GH},()=>Array(GW).fill(null));
+
+function sizeCanvas(){
+  const wrap = document.getElementById('maze-wrap');
+  const aw = wrap.clientWidth - 4;
+  const ah = wrap.clientHeight - 4;
+  CELL = Math.max(5, Math.min(18, Math.floor(Math.min(aw/GW, ah/GH))));
+  cv.width  = GW * CELL;
+  cv.height = GH * CELL;
+  wrap.style.width = cv.width + 'px';
+}
+
+function drawMaze(){
+  // Fond
+  ctx.fillStyle = COLORS.wall;
+  ctx.fillRect(0,0,cv.width,cv.height);
+
+  for(let r=0;r<GH;r++){
+    for(let c=0;c<GW;c++){
+      const v = GRID_ROWS[r][c];
+      if(v==='0'){
+        // Mur avec texture légère
+        ctx.fillStyle = COLORS.wall;
+        ctx.fillRect(c*CELL, r*CELL, CELL, CELL);
+        if(CELL>=8){
+          ctx.fillStyle='rgba(255,255,255,.025)';
+          ctx.fillRect(c*CELL, r*CELL, CELL>>1, CELL>>1);
+        }
+        continue;
+      }
+      // Sol
+      const ov = OV[r][c];
+      ctx.fillStyle = ov || COLORS.floor;
+      ctx.fillRect(c*CELL, r*CELL, CELL, CELL);
+      // Grille subtile
+      if(CELL>=9){
+        ctx.strokeStyle='rgba(0,48,135,.1)';
+        ctx.lineWidth=.5;
+        ctx.strokeRect(c*CELL+.5,r*CELL+.5,CELL-1,CELL-1);
+      }
+    }
+  }
+  // Départ / Arrivée
+  drawSpecial(START[0],START[1],'🚀');
+  drawSpecial(END[0],END[1],'🏁');
+  // Hotspots
+  HOTSPOTS.forEach(h=>{
+    const done = qDone[h.step];
+    const active = activeQ===h.step;
+    OV[h.r][h.c] = active ? COLORS.hotspotActive : done ? COLORS.hotspotDone : COLORS.hotspot;
+    ctx.fillStyle=OV[h.r][h.c];
+    ctx.fillRect(h.c*CELL,h.r*CELL,CELL,CELL);
+    if(CELL>=9){
+      const icons=['🚪','🗺️','🥩','❄️','🛒','🏷️','💳','🗣️','📦','🪧','📢','🚗'];
+      ctx.font=`${Math.max(7,Math.floor(CELL*.65))}px serif`;
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(done?'✅':icons[h.step], h.c*CELL+CELL/2, h.r*CELL+CELL/2+1);
+    }
+  });
+  drawChar();
+}
+
+function drawSpecial(r,c,icon){
+  if(CELL>=8){
+    ctx.font=`${Math.max(7,Math.floor(CELL*.7))}px serif`;
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(icon, c*CELL+CELL/2, r*CELL+CELL/2+1);
+  }
+}
+
+function drawChar(){
+  const x=charC*CELL+CELL/2, y=charR*CELL+CELL/2;
+  // Halo
+  const g=ctx.createRadialGradient(x,y,1,x,y,CELL*.9);
+  g.addColorStop(0,'rgba(254,240,138,.9)');
+  g.addColorStop(1,'rgba(254,240,138,0)');
+  ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,CELL*.9,0,Math.PI*2);ctx.fill();
+  // Personnage
+  ctx.font=`${Math.max(8,Math.floor(CELL*.8))}px serif`;
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText('🧑‍💼',x,y+1);
+}
+
+// Scroll pour garder le personnage visible
+function scrollToChar(){
+  const wrap=document.getElementById('maze-wrap');
+  const px=charC*CELL, py=charR*CELL;
+  const tw=wrap.clientWidth, th=wrap.clientHeight;
+  // Centre le personnage si le canvas est plus grand
+  if(cv.width>tw) wrap.scrollLeft=Math.max(0,px-tw/2+CELL/2);
+  if(cv.height>th) wrap.scrollTop=Math.max(0,py-th/2+CELL/2);
+}
+
+// ═══════════════════════════════════════════
+// ÉTAT
+// ═══════════════════════════════════════════
+let charR=START[0], charC=START[1];
+let activeQ=-1;           // question active
+let qDone={};             // stepIdx → {tries,ok}
+let history=[];
+let score=0, timer=0, gameOver=false;
+let stepsOk=0;
+
+let timerInt=setInterval(()=>{
+  timer++;
+  const m=String(Math.floor(timer/60)).padStart(2,'0');
+  const s=String(timer%60).padStart(2,'0');
+  document.getElementById('t-disp').textContent='⏱ '+m+':'+s;
+},1000);
+
+// ═══════════════════════════════════════════
+// MOUVEMENT
+// ═══════════════════════════════════════════
+function mv(dr,dc){
+  if(gameOver||activeQ>=0) return;
+  const nr=charR+dr, nc=charC+dc;
+  if(!isOpen(nr,nc)) return;
+  // Laisser une trace "visité" discrète
+  if(OV[charR][charC]===null) OV[charR][charC]='#1e3a6e';
+  charR=nr; charC=nc;
+  drawMaze();
+  scrollToChar();
+  // Hotspot ?
+  const hsKey=charR+','+charC;
+  if(hsKey in HS_MAP){
+    const idx=HS_MAP[hsKey];
+    if(!qDone[idx]?.ok){
+      activeQ=idx;
+      renderQuestion(idx,false);
+    }
+  }
+  // Arrivée ?
+  if(charR===END[0]&&charC===END[1]&&stepsOk>=QUESTIONS.length){
+    setTimeout(showEnd,500);
+  }
+}
+
+// Clavier
+document.addEventListener('keydown',e=>{
+  const k=e.key;
+  if(k==='ArrowUp'||k==='z'||k==='Z'){e.preventDefault();mv(-1,0);}
+  else if(k==='ArrowDown'||k==='s'||k==='S'){e.preventDefault();mv(1,0);}
+  else if(k==='ArrowLeft'||k==='q'||k==='Q'){e.preventDefault();mv(0,-1);}
+  else if(k==='ArrowRight'||k==='d'||k==='D'){e.preventDefault();mv(0,1);}
+});
+
+// Touch swipe
+let tx0=0,ty0=0;
+cv.addEventListener('touchstart',e=>{tx0=e.touches[0].clientX;ty0=e.touches[0].clientY;},{passive:true});
+cv.addEventListener('touchend',e=>{
+  const dx=e.changedTouches[0].clientX-tx0;
+  const dy=e.changedTouches[0].clientY-ty0;
+  if(Math.abs(dx)>Math.abs(dy)){mv(0,dx>0?1:-1);}
+  else{mv(dy>0?1:-1,0);}
+},{passive:true});
+
+// ═══════════════════════════════════════════
+// RENDU QUESTION
+// ═══════════════════════════════════════════
+function renderQuestion(idx,retry){
+  const q=QUESTIONS[idx];
+  const gc=document.getElementById('gc');
+  gc.innerHTML='';
+  // Progression
+  const pb=document.createElement('div');
+  pb.style.cssText='margin-bottom:8px;';
+  pb.innerHTML='<div style="background:#e0e7ff;border-radius:20px;height:7px;overflow:hidden;">'
+    +'<div style="height:100%;background:linear-gradient(90deg,#f7c800,#e5002b);border-radius:20px;width:'+(stepsOk/QUESTIONS.length*100)+'%;transition:width .5s;"></div></div>'
+    +'<div style="font-size:11px;font-weight:800;color:#6b7280;margin-top:3px;">'+stepsOk+' / '+QUESTIONS.length+' zones réussies</div>';
+  gc.appendChild(pb);
+  // Card question
+  const card=document.createElement('div');
+  card.className='q-card';
+  const top=document.createElement('div');
+  top.className='q-top';
+  top.style.background=q.bg;
+  top.innerHTML='<span class="q-badge">'+(retry?'🔄 Réessaie !':'Zone '+q.id+' / '+QUESTIONS.length)+'</span>'
+    +'<span class="q-lieu">'+q.lieu+'</span>';
+  card.appendChild(top);
+  const sit=document.createElement('div');
+  sit.className='q-sit';sit.style.marginTop='10px';
+  sit.innerHTML='<strong>📋 Situation :</strong> '+q.sit;
+  card.appendChild(sit);
+  const cli=document.createElement('div');
+  cli.className='q-cli';
+  cli.innerHTML='<div class="q-av">'+q.av+'</div><div class="q-bub">'+q.dg+'</div>';
+  card.appendChild(cli);
+  const hint=document.createElement('div');
+  hint.className='q-hint';hint.textContent=q.hint;
+  card.appendChild(hint);
+  const ql=document.createElement('p');
+  ql.className='q-label';ql.textContent='❓ '+q.q;
+  card.appendChild(ql);
+  const cd=document.createElement('div');cd.className='choices';
+  q.choix.forEach((ch,ci)=>{
+    const btn=document.createElement('button');
+    btn.className='cbtn';
+    btn.innerHTML='<span class="ci">'+ch.icon+'</span><span>'+ch.txt+'</span>';
+    btn.onclick=()=>handleAnswer(idx,ci);
+    cd.appendChild(btn);
+  });
+  card.appendChild(cd);
+  const fb=document.createElement('div');fb.className='fb';fb.id='fbbox';
+  card.appendChild(fb);
+  const nb=document.createElement('button');nb.className='nxt';nb.id='nxtbtn';
+  nb.textContent='▶ Continuer à explorer';nb.onclick=continueQ;
+  card.appendChild(nb);
+  gc.appendChild(card);
+  renderQMap();
+  document.getElementById('panel').scrollTo({top:0,behavior:'smooth'});
+}
+
+function handleAnswer(idx,ci){
+  const q=QUESTIONS[idx];
+  const ch=q.choix[ci];
+  document.querySelectorAll('.cbtn').forEach(b=>b.classList.add('dis'));
+  const rec=qDone[idx]||{tries:0,ok:false};
+  rec.tries++;
+  qDone[idx]=rec;
+
+  if(ch.ok){
+    document.querySelectorAll('.cbtn')[ci].classList.add('ok');
+    const pts=rec.tries===1?15:8;
+    score+=pts;rec.ok=true;stepsOk++;
+    document.getElementById('s-disp').textContent='⭐ '+score+' pt'+(score>1?'s':'');
+    document.getElementById('e-disp').textContent=stepsOk+'/'+QUESTIONS.length+' zones';
+    // Case hotspot → vert
+    OV[HOTSPOTS[idx].r][HOTSPOTS[idx].c]=COLORS.hotspotDone;
+    if(!history.find(h=>h.id===q.id))
+      history.push({id:q.id,lieu:q.lieu,ok:true,tries:rec.tries,txt:ch.txt,rule:ch.rule});
+    else{const e=history.find(h=>h.id===q.id);e.ok=true;e.tries=rec.tries;e.txt=ch.txt;}
+    const fb=document.getElementById('fbbox');
+    fb.className='fb ok show';
+    fb.innerHTML='<div class="ft">'+ch.ft+' <span style="font-size:11px;font-weight:700;color:#16a34a;">(+'+(pts)+' pts)</span></div><div>'+ch.fb+'</div><div class="frule">'+ch.rule+'</div>';
+    document.getElementById('nxtbtn').className='nxt show';
+    drawMaze();
+  } else {
+    document.querySelectorAll('.cbtn')[ci].classList.add('bad');
+    q.choix.forEach((c2,i)=>{if(c2.ok)document.querySelectorAll('.cbtn')[i].classList.add('ok');});
+    OV[HOTSPOTS[idx].r][HOTSPOTS[idx].c]='#fca5a5';
+    if(!history.find(h=>h.id===q.id))
+      history.push({id:q.id,lieu:q.lieu,ok:false,tries:rec.tries,txt:ch.txt,rule:ch.rule});
+    const fb=document.getElementById('fbbox');
+    fb.className='fb bad show';
+    fb.innerHTML='<div class="ft">'+ch.ft+'</div><div>'+ch.fb+'</div><div class="frule">'+ch.rule+'</div>';
+    drawMaze();
+    setTimeout(()=>showDeadBox(idx,ch),400);
+  }
+}
+
+function showDeadBox(idx,ch){
+  const q=QUESTIONS[idx];
+  const gc=document.getElementById('gc');
+  const db=document.createElement('div');
+  db.className='dead-card';db.id='deadbox';
+  const good=q.choix.find(c=>c.ok);
+  db.innerHTML='<div style="font-size:36px;margin-bottom:6px;">🔄</div>'
+    +'<h3>Fausse piste ! Rebrousse chemin.</h3>'
+    +'<p>Tu peux rebrousser chemin librement dans le labyrinthe, relire la règle, puis revenir sur cette case pour réessayer.</p>'
+    +'<div class="dead-rule">'+good.rule+'</div>'
+    +'<button class="retry-btn" onclick="retryQ('+idx+')">🔄 Réessayer tout de suite</button>';
+  gc.appendChild(db);
+}
+
+function retryQ(idx){
+  OV[HOTSPOTS[idx].r][HOTSPOTS[idx].c]=COLORS.hotspotActive;
+  drawMaze();
+  const db=document.getElementById('deadbox');if(db)db.remove();
+  renderQuestion(idx,true);
+}
+
+function continueQ(){
+  activeQ=-1;
+  renderIdle();
+}
+
+// ═══════════════════════════════════════════
+// PANNEAU IDLE
+// ═══════════════════════════════════════════
+function renderIdle(){
+  const gc=document.getElementById('gc');
+  gc.innerHTML='';
+  // Progress bar
+  const pb=document.createElement('div');
+  pb.innerHTML='<div style="background:#e0e7ff;border-radius:20px;height:7px;overflow:hidden;">'
+    +'<div style="height:100%;background:linear-gradient(90deg,#f7c800,#e5002b);border-radius:20px;width:'+(stepsOk/QUESTIONS.length*100)+'%;transition:width .5s;"></div></div>'
+    +'<div style="font-size:11px;font-weight:800;color:#6b7280;margin-top:3px;">'+stepsOk+' / '+QUESTIONS.length+' zones réussies</div>';
+  gc.appendChild(pb);
+  // Instructions
+  const instr=document.createElement('div');
+  instr.className='instr';
+  const rem=QUESTIONS.length-stepsOk;
+  instr.innerHTML='<h3>🗺️ Explore le labyrinthe !</h3>'
+    +'<p>Déplace-toi avec les <strong>flèches</strong> (ou ZQSD) pour avancer dans les couloirs.<br>'
+    +'Les <strong>cases colorées</strong> sont des zones de question — trouve-les toutes !</p>'
+    +(rem>0
+      ? '<p style="color:#fef08a;font-weight:800;">'+rem+' zone'+(rem>1?'s':'')+' encore à découvrir !</p>'
+      : '<p style="color:#86efac;font-weight:800;">✅ Toutes les zones réussies ! Va jusqu\'à la 🏁 !</p>')
+    +'<div class="keys"><span class="key">↑ Z</span><span class="key">↓ S</span><span class="key">← Q</span><span class="key">→ D</span></div>';
+  gc.appendChild(instr);
+  renderQMap();
+}
+
+function renderQMap(){
+  const gc=document.getElementById('gc');
+  const old=document.getElementById('qmap');if(old)old.remove();
+  const qm=document.createElement('div');qm.className='quest-map';qm.id='qmap';
+  qm.innerHTML='<h4>Zones à trouver dans le labyrinthe</h4>';
+  const gr=document.createElement('div');gr.className='qm-grid';
+  const icons=['🚪','🗺️','🥩','❄️','🛒','🏷️','💳','🗣️','📦','🪧','📢','🚗'];
+  QUESTIONS.forEach((q,i)=>{
+    const done=qDone[i]?.ok;
+    const tried=qDone[i]&&!done;
+    const act=activeQ===i;
+    const item=document.createElement('div');
+    item.className='qm-item'+(done?' done':tried?' fail':act?' active':'');
+    item.textContent=(done?'✅':tried?'❌':'')+icons[i]+' '+q.id;
+    item.title=q.lieu;
+    gr.appendChild(item);
+  });
+  qm.appendChild(gr);
+  gc.appendChild(qm);
+}
+
+// ═══════════════════════════════════════════
+// FIN
+// ═══════════════════════════════════════════
+function showEnd(){
+  if(gameOver)return;
+  gameOver=true;
+  clearInterval(timerInt);
+  const good=Object.values(qDone).filter(q=>q.ok).length;
+  const win=good>=Math.ceil(QUESTIONS.length*.7);
+  const mm=String(Math.floor(timer/60)).padStart(2,'0');
+  const ss=String(timer%60).padStart(2,'0');
+  const gc=document.getElementById('gc');gc.innerHTML='';
+  const ec=document.createElement('div');
+  ec.className='end-card '+(win?'win':'lose');
+  ec.innerHTML='<div style="font-size:52px;margin-bottom:7px;">'+(win?'😊🛒🎉':'😕🛒')+'</div>'
+    +'<h2>'+(win?'Sortie réussie ! Client heureux !':'Tu t\'es un peu perdu…')+'</h2>'
+    +'<div class="end-score">⭐ '+score+' pts — '+good+'/'+QUESTIONS.length+' réussies — ⏱ '+mm+':'+ss+'</div>'
+    +'<p class="end-msg">'+(win?'Bravo ! Tu as parcouru tout le labyrinthe et géré chaque situation. Tu maîtrises l\'accueil en hypermarché !':'Consulte ta fiche bilan, retiens les règles, et rejoue !')+'</p>'
+    +'<div class="end-btns"><button class="btn-p" onclick="showSynthese()">📋 Ma fiche bilan</button>'
+    +'<button class="btn-r" onclick="doRestart()">🔄 Rejouer</button></div>';
+  gc.appendChild(ec);
+}
+
+// ═══════════════════════════════════════════
+// SYNTHESE IMPRIMABLE
+// ═══════════════════════════════════════════
+function showSynthese(){
+  const good=Object.values(qDone).filter(q=>q.ok).length;
+  const win=good>=Math.ceil(QUESTIONS.length*.7);
+  const mm=String(Math.floor(timer/60)).padStart(2,'0');
+  const ss=String(timer%60).padStart(2,'0');
+  const gc=document.getElementById('gc');
+  const sy=document.createElement('div');sy.className='synth';
+  let h='<div class="sh">📋 Ma fiche bilan — Le Labyrinthe Carrefour</div><div class="sb">';
+  h+='<div style="background:#f5f8ff;border-radius:8px;padding:9px 12px;margin-bottom:11px;">'
+    +'<p style="font-size:10px;color:#6b7280;margin-bottom:2px;">CAP EPC – Accueil & Orientation en hypermarché</p>'
+    +'<p style="font-weight:800;font-size:12px;color:#003087;">Prénom / Nom : _______________________ &nbsp;&nbsp; Date : ___________</p>'
+    +'<p style="font-size:11px;margin-top:5px;">Score : <strong>'+score+' pts</strong> &nbsp;|&nbsp; '+good+'/'+QUESTIONS.length
+    +' réussies &nbsp;|&nbsp; ⏱ '+mm+':'+ss+' &nbsp;|&nbsp; '+(win?'😊 Sortie réussie !':'😕 À rejouer')+'</p></div>';
+  h+='<p style="font-size:10px;font-weight:800;color:#003087;margin-bottom:7px;text-transform:uppercase;letter-spacing:1px;">Résultats par zone</p>';
+  QUESTIONS.forEach((q,i)=>{
+    const rec=qDone[i];
+    const ent=history.find(e=>e.id===q.id);
+    const ok=rec?.ok;
+    h+='<div class="srow"><div class="snum '+(ok?'ok':'bad')+'">'+q.id+'</div><div class="sc">'
+      +'<strong>'+q.lieu+'</strong>'
+      +(ent?'<p>Réponse : '+ent.txt+'</p>':'<p style="color:#f59e0b;font-weight:700;">⚠️ Zone non trouvée</p>')
+      +(rec?.tries>1?'<p class="st">'+rec.tries+' essais</p>':'')
+      +(ent?'<p class="sr">'+ent.rule+'</p>':'')
+      +'</div></div>';
+  });
+  const rules=[
+    "Ne jamais porter les affaires d'un client — proposer un chariot ou un diable.",
+    "Accompagner le client jusqu'au rayon OU donner l'allée précise + un repère visuel.",
+    "Si tu ne sais pas répondre, trouver quelqu'un qui sait — ne jamais laisser sans réponse.",
+    "DLC/DDM : respecter la réglementation alimentaire — aucun compromis.",
+    "Rupture de stock : vérifier en réserve + proposer une alternative.",
+    "Conflit de prix : appliquer le prix le plus bas affiché (Code de la consommation).",
+    "Personnes âgées / handicapées / femmes enceintes → caisse prioritaire.",
+    "Client bavard : écouter brièvement + recentrer avec une question fermée.",
+    "Garantie légale de conformité : 2 ans même sans ticket (CB ou fidélité = preuve).",
+    "Prix non affiché = signaler immédiatement au responsable rayon.",
+    "Client agressif : écouter + rester calme + escalader vers le responsable.",
+    "Soigner la sortie du client = dernière impression = fidélisation.",
+  ];
+  h+='<div style="margin-top:11px;padding-top:10px;border-top:2px solid #e5e7eb;">'
+    +'<p style="font-size:10px;font-weight:800;color:#003087;margin-bottom:7px;">📌 Les 12 règles professionnelles à retenir</p>';
+  rules.forEach((r,i)=>{
+    h+='<div style="display:flex;gap:6px;align-items:flex-start;margin-bottom:5px;">'
+      +'<div style="min-width:17px;height:17px;border-radius:50%;background:#003087;color:white;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;">'+(i+1)+'</div>'
+      +'<p style="font-size:11px;line-height:1.45;">'+r+'</p></div>';
+  });
+  h+='</div></div><div style="padding:0 15px 15px;display:flex;gap:7px;flex-wrap:wrap;">'
+    +'<button class="btn-p" onclick="window.print()">🖨️ Imprimer ma fiche</button>'
+    +'<button class="btn-r" onclick="doRestart()">🔄 Rejouer</button></div>';
+  sy.innerHTML=h;
+  gc.appendChild(sy);
+  document.getElementById('pz').innerHTML=h;
+}
+
+// ═══════════════════════════════════════════
+// RESTART
+// ═══════════════════════════════════════════
+function doRestart(){
+  charR=START[0];charC=START[1];
+  activeQ=-1;qDone={};history=[];score=0;timer=0;gameOver=false;stepsOk=0;
+  for(let r=0;r<GH;r++)for(let c=0;c<GW;c++)OV[r][c]=null;
+  document.getElementById('s-disp').textContent='⭐ 0 pt';
+  document.getElementById('e-disp').textContent='0/'+QUESTIONS.length+' zones';
+  clearInterval(timerInt);
+  timerInt=setInterval(()=>{timer++;const m=String(Math.floor(timer/60)).padStart(2,'0');const s=String(timer%60).padStart(2,'0');document.getElementById('t-disp').textContent='⏱ '+m+':'+s;},1000);
+  sizeCanvas();drawMaze();renderIdle();
+}
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+window.addEventListener('resize',()=>{sizeCanvas();drawMaze();});
+sizeCanvas();
+drawMaze();
+renderIdle();
+</script>
+</body>
+</html>
